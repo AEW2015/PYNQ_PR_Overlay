@@ -2,7 +2,7 @@
 
 We are trying to add Partial Reconfiguration to the PYNQ Overlay.
 
-[PYNQ PR Wiki](https://github.com/AEW2015/PYNQ_PR_Overlay/wiki/_new)
+[PYNQ PR Wiki](https://github.com/AEW2015/PYNQ_PR_Overlay/wiki)
 
 
 ## PYNQ Welcome
