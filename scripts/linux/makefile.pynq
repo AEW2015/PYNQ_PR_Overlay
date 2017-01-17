@@ -1,0 +1,180 @@
+
+ifndef BOARD
+    $(error BOARD environment variable is undefined)
+endif
+
+REPO_DIR = /home/xilinx/pynq_git
+PYNQ_DIR = /usr/local/lib/python3.4/dist-packages/pynq
+
+FINAL_DOCS_DIR = /home/xilinx/docs
+FINAL_NOTEBOOKS_DIR = /home/xilinx/jupyter_notebooks
+FINAL_SCRIPTS_DIR = /home/xilinx/scripts
+ROOT_DIR = /root
+
+NOTEBOOK_IMAGES=adapter_mapping.JPG \
+adc_jumper.jpeg \
+als_oled_demo.JPG \
+arduino_iop.jpg \
+arduino_shield.jpg \
+audio_block_diagram.jpg \
+cable_type.jpeg \
+command_mode.png \
+dashboard_files_tab.png \
+dashboard_files_tab_btns.png \
+dashboard_files_tab_new.JPG \
+dashboard_files_tab_run.png \
+dashboard_running_tab.png \
+edit_mode.png \
+example_notebooks.jpg \
+getting_started_notebooks.jpg \
+menubar_toolbar.png \
+pmod_closeup.JPG \
+pmod_grove_adapter.jpg \
+pmod_iop.jpg \
+pmod_pins.png \
+pmod_tmp2_8pin.JPG \
+portal_homepage.jpg \
+pynqz1_arduino_interface.jpg \
+pynqz1_video.JPG \
+pynqz1_audio.JPG \
+pynqz1_base_overlay.png \
+pynqz1_board_io.JPG \
+pynqz1_pmod_interface.jpg \
+pynqz1_quick_start.jpg \
+pynqz1_setup.jpg \
+samba_share.JPG \
+sdk_import_bsp.JPG \
+sdk_launch_shell.jpg \
+sdk_make.JPG \
+sdk_make_result.JPG \
+vivado_base_overlay.JPG \
+zynq_block_diagram.jpg
+
+DOC_TEMP_NOTEBOOKS := 3_jupyter_notebook.tmp \
+4_programming_python.tmp  \
+5_programming_onboard.tmp \
+6a_base_overlay_iop.tmp \
+6b_base_overlay_video.tmp \
+6c_base_overlay_audio.tmp \
+
+USER_SCRIPTS := hostname.sh  \
+start_pl_server.py  \
+stop_pl_server.py \
+boot.py
+
+ROOT_SCRIPTS := 0_resizefs.sh \
+1_network.sh \
+2_jupyter_server.sh \
+3_pl_server.sh \
+4_boot_leds.sh
+
+update_pynq: xlnkutils pynq_package scripts_notebooks doc_temp_notebooks doc_notebooks doc_images pynq_permissions
+	@echo "Completed PYNQ update."
+	@echo "Notebooks     folder is at: ${FINAL_NOTEBOOKS_DIR}"
+	@echo "Scripts       folder is at: ${FINAL_SCRIPTS_DIR}"
+	@echo ""
+	@echo "Completed PYNQ update."
+	@echo ""
+
+update_docs: scripts_notebooks doc_sphinx doc_notebooks doc_images pynq_permissions
+	@echo	
+	@echo "Completed PYNQ documentation build."
+	@echo "Documentation folder is at: ${FINAL_DOCS_DIR}"
+	@echo
+
+pynq_package:
+	@echo
+	@echo "Pip install latest pynq python package"
+	@echo
+	python3.4 /home/xilinx/scripts/stop_pl_server.py
+	rm -rf ${PYNQ_DIR}/*
+	cp -rf ${REPO_DIR}/${BOARD}/sdk/bin/*.bin ${REPO_DIR}/python/pynq/iop/
+	cp -rf ${REPO_DIR}/${BOARD}/bitstream ${REPO_DIR}/python/pynq/
+	cd ${REPO_DIR}/python ; sudo -H pip install --upgrade .
+	python3.4 /home/xilinx/scripts/start_pl_server.py &
+
+pynq_permissions:
+	chown -R xilinx:xilinx ${PYNQ_DIR}/*
+	chmod -R a+rw ${FINAL_NOTEBOOKS_DIR} ${FINAL_DOCS_DIR} ${PYNQ_DIR}
+	chmod -R a+x ${FINAL_SCRIPTS_DIR}/*
+	chmod a+x ${ROOT_DIR}/*.sh
+	chmod a+x /etc/rc.local
+	chown -R xilinx:xilinx ${FINAL_NOTEBOOKS_DIR} ${FINAL_DOCS_DIR} ${FINAL_SCRIPTS_DIR} ${PYNQ_DIR}
+
+scripts_notebooks:
+	@echo
+	@echo "Update scripts and notebooks"
+	@echo
+	cp -arf ${REPO_DIR}/${BOARD}/notebooks/* ${FINAL_NOTEBOOKS_DIR}
+	cd ${FINAL_NOTEBOOKS_DIR} ; ln -fs /home/xilinx/docs
+
+	@for f in ${USER_SCRIPTS} ; do \
+		cp -af ${REPO_DIR}/scripts/linux/$$f ${FINAL_SCRIPTS_DIR} || exit 1;\
+	done
+
+	@for f in ${ROOT_SCRIPTS} ; do \
+		cp ${REPO_DIR}/scripts/linux/$$f  ${ROOT_DIR} || exit 1;\
+	done
+
+	cp -f ${REPO_DIR}/scripts/linux/rc.local /etc/
+
+new_pynq_update:
+	@echo
+	@echo "Copy new Pynq Update Script"
+	@echo
+	cp -af ${REPO_DIR}/scripts/linux/update_pynq.sh ${FINAL_SCRIPTS_DIR}
+
+xlnkutils:
+	@echo
+	@echo "Build libsds_lib"
+	@echo
+	cd ${REPO_DIR}/scripts/xlnkutils && make && make install
+
+clean_dirs:
+	@echo
+	@echo "Cleaning up old files"
+	@echo
+	rm -rf ${FINAL_DOCS_DIR}/*
+	mv ${FINAL_NOTEBOOKS_DIR}/slides/reveal.js ${ROOT_DIR}/
+	rm -rf ${FINAL_NOTEBOOKS_DIR}/*
+	mkdir -p ${FINAL_NOTEBOOKS_DIR}/getting_started/images
+	mkdir -p ${FINAL_NOTEBOOKS_DIR}/examples
+	mkdir -p ${FINAL_NOTEBOOKS_DIR}/slides
+	mv ${ROOT_DIR}/reveal.js ${FINAL_NOTEBOOKS_DIR}/slides/
+
+doc_sphinx:
+	@echo
+	@echo "Building docs"
+	@echo
+	cd ${REPO_DIR}/docs ; sphinx-apidoc -f -o ./source ${PYNQ_DIR}
+	cd ${REPO_DIR}/docs ; python3 ipynb_post_processor.py
+	cd ${REPO_DIR}/docs ; make clean ; make html
+	rm -rf ${FINAL_DOCS_DIR}/*
+	cp -r ${REPO_DIR}/docs/build/html/* ${FINAL_DOCS_DIR}
+
+doc_notebooks:
+	mkdir -p ${FINAL_NOTEBOOKS_DIR}/getting_started
+	mkdir -p ${FINAL_NOTEBOOKS_DIR}/getting_started/images
+	cp ${REPO_DIR}/docs/source/3_jupyter_notebook.ipynb \
+	${FINAL_NOTEBOOKS_DIR}/getting_started/1_jupyter_notebook.ipynb
+	cp ${REPO_DIR}/docs/source/4_programming_python.ipynb \
+	${FINAL_NOTEBOOKS_DIR}/getting_started/2_programming_python.ipynb
+	cp ${REPO_DIR}/docs/source/5_programming_onboard.ipynb \
+	${FINAL_NOTEBOOKS_DIR}/getting_started/3_programming_onboard.ipynb
+	cp ${REPO_DIR}/docs/source/6a_base_overlay_iop.ipynb \
+	${FINAL_NOTEBOOKS_DIR}/getting_started/4_base_overlay_iop.ipynb
+	cp ${REPO_DIR}/docs/source/6b_base_overlay_video.ipynb \
+	${FINAL_NOTEBOOKS_DIR}/getting_started/5_base_overlay_video.ipynb
+	cp ${REPO_DIR}/docs/source/6c_base_overlay_audio.ipynb \
+	${FINAL_NOTEBOOKS_DIR}/getting_started/6_base_overlay_audio.ipynb
+	cp -arf ${REPO_DIR}/docs/build/html/* ${FINAL_DOCS_DIR}
+
+doc_temp_notebooks: 
+	@for f in ${DOC_TEMP_NOTEBOOKS} ; do \
+		cp ${REPO_DIR}/docs/source/temp/$$f  ${REPO_DIR}/docs/source/${f%.tmp}.ipynb || exit 1; \
+	done
+
+doc_images: 
+	@for f in ${NOTEBOOK_IMAGES} ; do \
+		cp ${REPO_DIR}/docs/source/images/$$f ${FINAL_NOTEBOOKS_DIR}/getting_started/images/ || exit 1; \
+	done
