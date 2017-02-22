@@ -20,7 +20,7 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2016.1
+set scripts_vivado_version 2016.3
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
@@ -39,15 +39,16 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # If there is no project opened, this script will create a
 # project, but make sure you do not have an existing project
-# <./base/base.xpr> in the current working folder.
+# <./myproj/project_1.xpr> in the current working folder.
+
 
 set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
    create_project base base -part xc7z020clg400-1
 }
-
 set_property  ip_repo_paths  ../ip [current_project]
 update_ip_catalog
+
 
 # CHANGE DESIGN NAME HERE
 set design_name system
@@ -831,6 +832,7 @@ proc create_hier_cell_video { parentCell nameHier } {
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 M00_AXI
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI1
+  create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI2
   create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_LITE
   create_bd_intf_pin -mode Slave -vlnv digilentinc.com:interface:tmds_rtl:1.0 TMDS
   create_bd_intf_pin -mode Master -vlnv digilentinc.com:interface:tmds_rtl:1.0 TMDS1
@@ -853,8 +855,16 @@ proc create_hier_cell_video { parentCell nameHier } {
   create_bd_pin -dir I -from 0 -to 0 -type rst s00_axi_aresetn
   create_bd_pin -dir I -from 0 -to 0 -type rst vid_io_in_reset
 
+  # Create instance: Video_PR_0, and set properties
+  set Video_PR_0 [ create_bd_cell -type ip -vlnv xilinx.com:user:Video_PR:1.0 Video_PR_0 ]
+
   # Create instance: axi_dynclk_0, and set properties
   set axi_dynclk_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:axi_dynclk:1.0 axi_dynclk_0 ]
+
+  set_property -dict [ list \
+CONFIG.NUM_READ_OUTSTANDING {1} \
+CONFIG.NUM_WRITE_OUTSTANDING {1} \
+ ] [get_bd_intf_pins /video/axi_dynclk_0/s00_axi]
 
   # Create instance: axi_gpio_video, and set properties
   set axi_gpio_video [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_video ]
@@ -888,11 +898,11 @@ CONFIG.c_s2mm_max_burst_length {32} \
  ] $axi_vdma_0
 
   # Create instance: dvi2rgb_0, and set properties
-  set dvi2rgb_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:dvi2rgb:1.6 dvi2rgb_0 ]
+  set dvi2rgb_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:dvi2rgb:1.7 dvi2rgb_0 ]
   set_property -dict [ list \
 CONFIG.kAddBUFG {false} \
 CONFIG.kClkRange {1} \
-CONFIG.kEdidFileName {720p_edid.txt} \
+CONFIG.kEdidFileName {720p_edid.data} \
 CONFIG.kRstActiveHigh {false} \
  ] $dvi2rgb_0
 
@@ -905,7 +915,7 @@ CONFIG.C_INTERRUPT_PRESENT {1} \
  ] $hdmi_out_hpd_video
 
   # Create instance: rgb2dvi_0, and set properties
-  set rgb2dvi_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:rgb2dvi:1.2 rgb2dvi_0 ]
+  set rgb2dvi_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:rgb2dvi:1.3 rgb2dvi_0 ]
   set_property -dict [ list \
 CONFIG.kClkRange {2} \
 CONFIG.kGenerateSerialClk {false} \
@@ -953,12 +963,14 @@ CONFIG.NUM_PORTS {6} \
   connect_bd_intf_net -intf_net Conn2 [get_bd_intf_pins ctrl] [get_bd_intf_pins v_tc_0/ctrl]
   connect_bd_intf_net -intf_net Conn3 [get_bd_intf_pins ctrl1] [get_bd_intf_pins v_tc_1/ctrl]
   connect_bd_intf_net -intf_net Conn4 [get_bd_intf_pins S_AXI_LITE] [get_bd_intf_pins axi_vdma_0/S_AXI_LITE]
+  connect_bd_intf_net -intf_net Conn5 [get_bd_intf_pins S_AXI2] [get_bd_intf_pins Video_PR_0/S_AXI]
+  connect_bd_intf_net -intf_net Video_PR_0_RGB_IN_O [get_bd_intf_pins Video_PR_0/RGB_IN_O] [get_bd_intf_pins v_vid_in_axi4s_0/vid_io_in]
   connect_bd_intf_net -intf_net axi_mem_intercon_M00_AXI [get_bd_intf_pins M00_AXI] [get_bd_intf_pins axi_mem_intercon/M00_AXI]
   connect_bd_intf_net -intf_net axi_vdma_0_M_AXIS_MM2S [get_bd_intf_pins axi_vdma_0/M_AXIS_MM2S] [get_bd_intf_pins v_axi4s_vid_out_0/video_in]
   connect_bd_intf_net -intf_net axi_vdma_0_M_AXI_MM2S [get_bd_intf_pins axi_mem_intercon/S01_AXI] [get_bd_intf_pins axi_vdma_0/M_AXI_MM2S]
   connect_bd_intf_net -intf_net axi_vdma_0_M_AXI_S2MM [get_bd_intf_pins axi_mem_intercon/S00_AXI] [get_bd_intf_pins axi_vdma_0/M_AXI_S2MM]
   connect_bd_intf_net -intf_net dvi2rgb_0_DDC [get_bd_intf_pins DDC] [get_bd_intf_pins dvi2rgb_0/DDC]
-  connect_bd_intf_net -intf_net dvi2rgb_0_RGB [get_bd_intf_pins dvi2rgb_0/RGB] [get_bd_intf_pins v_vid_in_axi4s_0/vid_io_in]
+  connect_bd_intf_net -intf_net dvi2rgb_0_RGB [get_bd_intf_pins Video_PR_0/RGB_IN_I] [get_bd_intf_pins dvi2rgb_0/RGB]
   connect_bd_intf_net -intf_net hdmi_in_1 [get_bd_intf_pins TMDS] [get_bd_intf_pins dvi2rgb_0/TMDS]
   connect_bd_intf_net -intf_net processing_system7_0_axi_periph_M06_AXI [get_bd_intf_pins S_AXI] [get_bd_intf_pins hdmi_out_hpd_video/S_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_axi_periph_M07_AXI [get_bd_intf_pins S_AXI1] [get_bd_intf_pins axi_gpio_video/S_AXI]
@@ -969,8 +981,8 @@ CONFIG.NUM_PORTS {6} \
   connect_bd_intf_net -intf_net v_vid_in_axi4s_0_vtiming_out [get_bd_intf_pins v_tc_1/vtiming_in] [get_bd_intf_pins v_vid_in_axi4s_0/vtiming_out]
 
   # Create port connections
-  connect_bd_net -net Net [get_bd_pins S00_ACLK] [get_bd_pins axi_dynclk_0/REF_CLK_I] [get_bd_pins axi_dynclk_0/s00_axi_aclk] [get_bd_pins axi_gpio_video/s_axi_aclk] [get_bd_pins axi_vdma_0/s_axi_lite_aclk] [get_bd_pins hdmi_out_hpd_video/s_axi_aclk] [get_bd_pins v_tc_0/s_axi_aclk] [get_bd_pins v_tc_1/s_axi_aclk]
-  connect_bd_net -net Net1 [get_bd_pins s00_axi_aresetn] [get_bd_pins axi_dynclk_0/s00_axi_aresetn] [get_bd_pins axi_gpio_video/s_axi_aresetn] [get_bd_pins axi_vdma_0/axi_resetn] [get_bd_pins dvi2rgb_0/aRst_n] [get_bd_pins hdmi_out_hpd_video/s_axi_aresetn] [get_bd_pins v_tc_0/s_axi_aresetn] [get_bd_pins v_tc_1/s_axi_aresetn]
+  connect_bd_net -net Net [get_bd_pins S00_ACLK] [get_bd_pins Video_PR_0/s_axi_aclk] [get_bd_pins axi_dynclk_0/REF_CLK_I] [get_bd_pins axi_dynclk_0/s00_axi_aclk] [get_bd_pins axi_gpio_video/s_axi_aclk] [get_bd_pins axi_vdma_0/s_axi_lite_aclk] [get_bd_pins hdmi_out_hpd_video/s_axi_aclk] [get_bd_pins v_tc_0/s_axi_aclk] [get_bd_pins v_tc_1/s_axi_aclk]
+  connect_bd_net -net Net1 [get_bd_pins s00_axi_aresetn] [get_bd_pins Video_PR_0/s_axi_aresetn] [get_bd_pins axi_dynclk_0/s00_axi_aresetn] [get_bd_pins axi_gpio_video/s_axi_aresetn] [get_bd_pins axi_vdma_0/axi_resetn] [get_bd_pins dvi2rgb_0/aRst_n] [get_bd_pins hdmi_out_hpd_video/s_axi_aresetn] [get_bd_pins v_tc_0/s_axi_aresetn] [get_bd_pins v_tc_1/s_axi_aresetn]
   connect_bd_net -net RefClk_1 [get_bd_pins RefClk] [get_bd_pins dvi2rgb_0/RefClk]
   connect_bd_net -net aclk_1 [get_bd_pins ACLK] [get_bd_pins axi_mem_intercon/ACLK] [get_bd_pins axi_mem_intercon/M00_ACLK] [get_bd_pins axi_mem_intercon/S00_ACLK] [get_bd_pins axi_mem_intercon/S01_ACLK] [get_bd_pins axi_vdma_0/m_axi_mm2s_aclk] [get_bd_pins axi_vdma_0/m_axi_s2mm_aclk] [get_bd_pins axi_vdma_0/s_axis_s2mm_aclk] [get_bd_pins v_vid_in_axi4s_0/aclk]
   connect_bd_net -net axi_dynclk_0_LOCKED_O [get_bd_pins axi_dynclk_0/LOCKED_O] [get_bd_pins rgb2dvi_0/aRst_n]
@@ -980,7 +992,7 @@ CONFIG.NUM_PORTS {6} \
   connect_bd_net -net axi_gpio_video_ip2intc_irpt [get_bd_pins axi_gpio_video/ip2intc_irpt] [get_bd_pins xlconcat_0/In4]
   connect_bd_net -net axi_vdma_0_mm2s_introut [get_bd_pins axi_vdma_0/mm2s_introut] [get_bd_pins xlconcat_0/In1]
   connect_bd_net -net axi_vdma_0_s2mm_introut [get_bd_pins axi_vdma_0/s2mm_introut] [get_bd_pins xlconcat_0/In0]
-  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins PixelClk] [get_bd_pins dvi2rgb_0/PixelClk] [get_bd_pins v_tc_1/clk] [get_bd_pins v_vid_in_axi4s_0/vid_io_in_clk]
+  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins PixelClk] [get_bd_pins Video_PR_0/PIXEL_CLK_IN] [get_bd_pins dvi2rgb_0/PixelClk] [get_bd_pins v_tc_1/clk] [get_bd_pins v_vid_in_axi4s_0/vid_io_in_clk]
   connect_bd_net -net dvi2rgb_0_aPixelClkLckd [get_bd_pins aPixelClkLckd] [get_bd_pins axi_gpio_video/gpio2_io_i] [get_bd_pins dvi2rgb_0/aPixelClkLckd]
   connect_bd_net -net hdmi_out_hpd_video_gpio_io_o [get_bd_pins gpio_io_o] [get_bd_pins hdmi_out_hpd_video/gpio_io_o]
   connect_bd_net -net hdmi_out_hpd_video_ip2intc_irpt [get_bd_pins hdmi_out_hpd_video/ip2intc_irpt] [get_bd_pins xlconcat_0/In5]
@@ -1279,7 +1291,7 @@ CONFIG.CONST_WIDTH {6} \
  ] $logic_0_6bits
 
   # Create instance: mb, and set properties
-  set mb [ create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze:9.6 mb ]
+  set mb [ create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze:10.0 mb ]
   set_property -dict [ list \
 CONFIG.C_DEBUG_ENABLED {1} \
 CONFIG.C_D_AXI {1} \
@@ -1313,14 +1325,6 @@ CONFIG.NUM_PORTS {7} \
 
   # Create instance: mb3_uartlite_d1_d0, and set properties
   set mb3_uartlite_d1_d0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_uartlite:2.0 mb3_uartlite_d1_d0 ]
-  set_property -dict [ list \
-CONFIG.C_S_AXI_ACLK_FREQ_HZ {100000000} \
- ] $mb3_uartlite_d1_d0
-
-  # Need to retain value_src of defaults
-  set_property -dict [ list \
-CONFIG.C_S_AXI_ACLK_FREQ_HZ.VALUE_SRC {DEFAULT} \
- ] $mb3_uartlite_d1_d0
 
   # Create instance: mb3_xadc, and set properties
   set mb3_xadc [ create_bd_cell -type ip -vlnv xilinx.com:ip:xadc_wiz:3.3 mb3_xadc ]
@@ -1519,7 +1523,7 @@ CONFIG.CONST_VAL {0} \
  ] $logic_0
 
   # Create instance: mb, and set properties
-  set mb [ create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze:9.6 mb ]
+  set mb [ create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze:10.0 mb ]
   set_property -dict [ list \
 CONFIG.C_DEBUG_ENABLED {1} \
 CONFIG.C_D_AXI {1} \
@@ -1690,7 +1694,7 @@ CONFIG.CONST_VAL {0} \
  ] $logic_0
 
   # Create instance: mb, and set properties
-  set mb [ create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze:9.6 mb ]
+  set mb [ create_bd_cell -type ip -vlnv xilinx.com:ip:microblaze:10.0 mb ]
   set_property -dict [ list \
 CONFIG.C_DEBUG_ENABLED {1} \
 CONFIG.C_D_AXI {1} \
@@ -2299,10 +2303,10 @@ CONFIG.PCW_FCLK2_PERIPHERAL_DIVISOR1 {1} \
 CONFIG.PCW_FCLK3_PERIPHERAL_CLKSRC {IO PLL} \
 CONFIG.PCW_FCLK3_PERIPHERAL_DIVISOR0 {6} \
 CONFIG.PCW_FCLK3_PERIPHERAL_DIVISOR1 {1} \
-CONFIG.PCW_FCLK_CLK0_BUF {true} \
-CONFIG.PCW_FCLK_CLK1_BUF {true} \
-CONFIG.PCW_FCLK_CLK2_BUF {true} \
-CONFIG.PCW_FCLK_CLK3_BUF {true} \
+CONFIG.PCW_FCLK_CLK0_BUF {TRUE} \
+CONFIG.PCW_FCLK_CLK1_BUF {TRUE} \
+CONFIG.PCW_FCLK_CLK2_BUF {TRUE} \
+CONFIG.PCW_FCLK_CLK3_BUF {TRUE} \
 CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {100} \
 CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ {142} \
 CONFIG.PCW_FPGA2_PERIPHERAL_FREQMHZ {200} \
@@ -2971,7 +2975,7 @@ CONFIG.PCW_WDT_WDT_IO {<Select>} \
   # Create instance: processing_system7_0_axi_periph, and set properties
   set processing_system7_0_axi_periph [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 processing_system7_0_axi_periph ]
   set_property -dict [ list \
-CONFIG.NUM_MI {13} \
+CONFIG.NUM_MI {14} \
  ] $processing_system7_0_axi_periph
 
   # Create instance: processing_system7_0_axi_periph_1, and set properties
@@ -3055,6 +3059,7 @@ CONFIG.C_IS_DUAL {1} \
   connect_bd_intf_net -intf_net processing_system7_0_axi_periph_M04_AXI [get_bd_intf_pins mb_bram_ctrl_3/S_AXI] [get_bd_intf_pins processing_system7_0_axi_periph/M04_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_axi_periph_M11_AXI [get_bd_intf_pins audio/S_AXI_LITE] [get_bd_intf_pins processing_system7_0_axi_periph/M11_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_axi_periph_M12_AXI [get_bd_intf_pins processing_system7_0_axi_periph/M12_AXI] [get_bd_intf_pins rgbleds_gpio/S_AXI]
+  connect_bd_intf_net -intf_net processing_system7_0_axi_periph_M13_AXI [get_bd_intf_pins processing_system7_0_axi_periph/M13_AXI] [get_bd_intf_pins video/S_AXI2]
   connect_bd_intf_net -intf_net rgbled_gpio_GPIO [get_bd_intf_ports rgbleds_6bits] [get_bd_intf_pins rgbleds_gpio/GPIO]
   connect_bd_intf_net -intf_net s00_axi_1 [get_bd_intf_pins processing_system7_0_axi_periph/M07_AXI] [get_bd_intf_pins video/s00_axi]
   connect_bd_intf_net -intf_net swsleds_gpio_GPIO [get_bd_intf_ports sws_2bits] [get_bd_intf_pins swsleds_gpio/GPIO]
@@ -3099,15 +3104,15 @@ CONFIG.C_IS_DUAL {1} \
   connect_bd_net -net proc_sys_reset_0_peripheral_reset [get_bd_pins proc_sys_reset_pixelclk/peripheral_reset] [get_bd_pins video/vid_io_in_reset]
   connect_bd_net -net proc_sys_reset_142M_interconnect_aresetn [get_bd_pins proc_sys_reset_142M/interconnect_aresetn] [get_bd_pins video/ARESETN]
   connect_bd_net -net proc_sys_reset_142M_peripheral_aresetn [get_bd_pins proc_sys_reset_142M/peripheral_aresetn] [get_bd_pins video/M00_ARESETN]
-  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins audio/clk_i] [get_bd_pins btns_gpio/s_axi_aclk] [get_bd_pins iop1/clk] [get_bd_pins iop2/clk] [get_bd_pins iop3/clk] [get_bd_pins mb_bram_ctrl_1/s_axi_aclk] [get_bd_pins mb_bram_ctrl_2/s_axi_aclk] [get_bd_pins mb_bram_ctrl_3/s_axi_aclk] [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins processing_system7_0_axi_periph/ACLK] [get_bd_pins processing_system7_0_axi_periph/M00_ACLK] [get_bd_pins processing_system7_0_axi_periph/M01_ACLK] [get_bd_pins processing_system7_0_axi_periph/M02_ACLK] [get_bd_pins processing_system7_0_axi_periph/M03_ACLK] [get_bd_pins processing_system7_0_axi_periph/M04_ACLK] [get_bd_pins processing_system7_0_axi_periph/M05_ACLK] [get_bd_pins processing_system7_0_axi_periph/M06_ACLK] [get_bd_pins processing_system7_0_axi_periph/M07_ACLK] [get_bd_pins processing_system7_0_axi_periph/M08_ACLK] [get_bd_pins processing_system7_0_axi_periph/M09_ACLK] [get_bd_pins processing_system7_0_axi_periph/M10_ACLK] [get_bd_pins processing_system7_0_axi_periph/M11_ACLK] [get_bd_pins processing_system7_0_axi_periph/M12_ACLK] [get_bd_pins processing_system7_0_axi_periph/S00_ACLK] [get_bd_pins rgbleds_gpio/s_axi_aclk] [get_bd_pins rst_processing_system7_0_100M/slowest_sync_clk] [get_bd_pins swsleds_gpio/s_axi_aclk] [get_bd_pins video/S00_ACLK]
+  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins audio/clk_i] [get_bd_pins btns_gpio/s_axi_aclk] [get_bd_pins iop1/clk] [get_bd_pins iop2/clk] [get_bd_pins iop3/clk] [get_bd_pins mb_bram_ctrl_1/s_axi_aclk] [get_bd_pins mb_bram_ctrl_2/s_axi_aclk] [get_bd_pins mb_bram_ctrl_3/s_axi_aclk] [get_bd_pins processing_system7_0/FCLK_CLK0] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins processing_system7_0_axi_periph/ACLK] [get_bd_pins processing_system7_0_axi_periph/M00_ACLK] [get_bd_pins processing_system7_0_axi_periph/M01_ACLK] [get_bd_pins processing_system7_0_axi_periph/M02_ACLK] [get_bd_pins processing_system7_0_axi_periph/M03_ACLK] [get_bd_pins processing_system7_0_axi_periph/M04_ACLK] [get_bd_pins processing_system7_0_axi_periph/M05_ACLK] [get_bd_pins processing_system7_0_axi_periph/M06_ACLK] [get_bd_pins processing_system7_0_axi_periph/M07_ACLK] [get_bd_pins processing_system7_0_axi_periph/M08_ACLK] [get_bd_pins processing_system7_0_axi_periph/M09_ACLK] [get_bd_pins processing_system7_0_axi_periph/M10_ACLK] [get_bd_pins processing_system7_0_axi_periph/M11_ACLK] [get_bd_pins processing_system7_0_axi_periph/M12_ACLK] [get_bd_pins processing_system7_0_axi_periph/M13_ACLK] [get_bd_pins processing_system7_0_axi_periph/S00_ACLK] [get_bd_pins rgbleds_gpio/s_axi_aclk] [get_bd_pins rst_processing_system7_0_100M/slowest_sync_clk] [get_bd_pins swsleds_gpio/s_axi_aclk] [get_bd_pins video/S00_ACLK]
   connect_bd_net -net processing_system7_0_FCLK_CLK1 [get_bd_pins proc_sys_reset_142M/slowest_sync_clk] [get_bd_pins processing_system7_0/FCLK_CLK1] [get_bd_pins processing_system7_0/S_AXI_HP0_ACLK] [get_bd_pins video/ACLK]
   connect_bd_net -net processing_system7_0_FCLK_CLK2 [get_bd_pins processing_system7_0/FCLK_CLK2] [get_bd_pins video/RefClk]
   connect_bd_net -net processing_system7_0_FCLK_CLK3 [get_bd_pins axi_mem_intercon/ACLK] [get_bd_pins axi_mem_intercon/M00_ACLK] [get_bd_pins axi_mem_intercon/S00_ACLK] [get_bd_pins axi_mem_intercon/S01_ACLK] [get_bd_pins processing_system7_0/FCLK_CLK3] [get_bd_pins processing_system7_0/M_AXI_GP1_ACLK] [get_bd_pins processing_system7_0/S_AXI_HP2_ACLK] [get_bd_pins processing_system7_0_axi_periph_1/ACLK] [get_bd_pins processing_system7_0_axi_periph_1/M00_ACLK] [get_bd_pins processing_system7_0_axi_periph_1/M01_ACLK] [get_bd_pins processing_system7_0_axi_periph_1/M02_ACLK] [get_bd_pins processing_system7_0_axi_periph_1/M03_ACLK] [get_bd_pins processing_system7_0_axi_periph_1/S00_ACLK] [get_bd_pins rst_processing_system7_0_166M/slowest_sync_clk] [get_bd_pins tracebuffer_arduino/s_axi_aclk] [get_bd_pins tracebuffer_pmods/s_axi_aclk]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins proc_sys_reset_142M/ext_reset_in] [get_bd_pins proc_sys_reset_pixelclk/ext_reset_in] [get_bd_pins processing_system7_0/FCLK_RESET0_N] [get_bd_pins rst_processing_system7_0_100M/ext_reset_in] [get_bd_pins rst_processing_system7_0_166M/ext_reset_in]
-  connect_bd_net -net processing_system7_0_GPIO_O [get_bd_pins mb_1_reset/Din] [get_bd_pins mb_2_reset/Din] [get_bd_pins mb_3_reset/Din] [get_bd_pins audio_path_sel/Din]  [get_bd_pins processing_system7_0/GPIO_O]
+  connect_bd_net -net processing_system7_0_GPIO_O [get_bd_pins audio_path_sel/Din] [get_bd_pins mb_1_reset/Din] [get_bd_pins mb_2_reset/Din] [get_bd_pins mb_3_reset/Din] [get_bd_pins processing_system7_0/GPIO_O]
   connect_bd_net -net pwm_audio_o_mux_y [get_bd_ports pwm_audio_o] [get_bd_pins audio/pwm_audio_o]
   connect_bd_net -net rst_processing_system7_0_100M_interconnect_aresetn [get_bd_pins processing_system7_0_axi_periph/ARESETN] [get_bd_pins rst_processing_system7_0_100M/interconnect_aresetn]
-  connect_bd_net -net rst_processing_system7_0_100M_peripheral_aresetn [get_bd_pins audio/s_axi_lite_aresetn] [get_bd_pins btns_gpio/s_axi_aresetn] [get_bd_pins iop3/s_axi_aresetn] [get_bd_pins mb_bram_ctrl_1/s_axi_aresetn] [get_bd_pins mb_bram_ctrl_2/s_axi_aresetn] [get_bd_pins mb_bram_ctrl_3/s_axi_aresetn] [get_bd_pins processing_system7_0_axi_periph/M00_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M01_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M02_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M03_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M04_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M05_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M06_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M07_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M08_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M09_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M10_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M11_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M12_ARESETN] [get_bd_pins processing_system7_0_axi_periph/S00_ARESETN] [get_bd_pins rgbleds_gpio/s_axi_aresetn] [get_bd_pins rst_processing_system7_0_100M/peripheral_aresetn] [get_bd_pins swsleds_gpio/s_axi_aresetn] [get_bd_pins video/s00_axi_aresetn]
+  connect_bd_net -net rst_processing_system7_0_100M_peripheral_aresetn [get_bd_pins audio/s_axi_lite_aresetn] [get_bd_pins btns_gpio/s_axi_aresetn] [get_bd_pins iop3/s_axi_aresetn] [get_bd_pins mb_bram_ctrl_1/s_axi_aresetn] [get_bd_pins mb_bram_ctrl_2/s_axi_aresetn] [get_bd_pins mb_bram_ctrl_3/s_axi_aresetn] [get_bd_pins processing_system7_0_axi_periph/M00_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M01_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M02_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M03_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M04_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M05_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M06_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M07_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M08_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M09_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M10_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M11_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M12_ARESETN] [get_bd_pins processing_system7_0_axi_periph/M13_ARESETN] [get_bd_pins processing_system7_0_axi_periph/S00_ARESETN] [get_bd_pins rgbleds_gpio/s_axi_aresetn] [get_bd_pins rst_processing_system7_0_100M/peripheral_aresetn] [get_bd_pins swsleds_gpio/s_axi_aresetn] [get_bd_pins video/s00_axi_aresetn]
   connect_bd_net -net rst_processing_system7_0_166M_interconnect_aresetn [get_bd_pins axi_mem_intercon/ARESETN] [get_bd_pins processing_system7_0_axi_periph_1/ARESETN] [get_bd_pins rst_processing_system7_0_166M/interconnect_aresetn]
   connect_bd_net -net rst_processing_system7_0_166M_peripheral_aresetn [get_bd_pins axi_mem_intercon/M00_ARESETN] [get_bd_pins axi_mem_intercon/S00_ARESETN] [get_bd_pins axi_mem_intercon/S01_ARESETN] [get_bd_pins processing_system7_0_axi_periph_1/M00_ARESETN] [get_bd_pins processing_system7_0_axi_periph_1/M01_ARESETN] [get_bd_pins processing_system7_0_axi_periph_1/M02_ARESETN] [get_bd_pins processing_system7_0_axi_periph_1/M03_ARESETN] [get_bd_pins processing_system7_0_axi_periph_1/S00_ARESETN] [get_bd_pins rst_processing_system7_0_166M/peripheral_aresetn] [get_bd_pins tracebuffer_arduino/s_axi_aresetn] [get_bd_pins tracebuffer_pmods/s_axi_aresetn]
   connect_bd_net -net shield2sw_data_in_a5_a0_1 [get_bd_ports shield2sw_data_in_a5_a0] [get_bd_pins concat_arduino/In1] [get_bd_pins iop3/shield2sw_data_in_a5_a0]
@@ -3121,6 +3126,7 @@ CONFIG.C_IS_DUAL {1} \
   connect_bd_net -net video_dout [get_bd_pins concat_interrupts/In0] [get_bd_pins video/dout]
 
   # Create address segments
+  create_bd_addr_seg -range 0x00010000 -offset 0x43C40000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs video/Video_PR_0/S_AXI/S_AXI_reg] SEG_Video_PR_0_S_AXI_reg
   create_bd_addr_seg -range 0x00010000 -offset 0x80400000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs tracebuffer_pmods/axi_dma_0/S_AXI_LITE/Reg] SEG_axi_dma_0_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x80410000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs tracebuffer_arduino/axi_dma_0/S_AXI_LITE/Reg] SEG_axi_dma_0_Reg1
   create_bd_addr_seg -range 0x00010000 -offset 0x43C10000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs video/axi_dynclk_0/s00_axi/reg0] SEG_axi_dynclk_0_reg0
@@ -3143,26 +3149,26 @@ CONFIG.C_IS_DUAL {1} \
   create_bd_addr_seg -range 0x00010000 -offset 0x44A10000 [get_bd_addr_spaces iop1/mb/Data] [get_bd_addr_segs iop1/mb1_spi/AXI_LITE/Reg] SEG_axi_quad_spi_0_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces iop1/mb/Instruction] [get_bd_addr_segs iop1/mb1_lmb/lmb_bram_if_cntlr/SLMB/Mem] SEG_ilmb_bram_if_cntlr_Mem
   create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces iop1/mb/Data] [get_bd_addr_segs iop1/mb1_lmb/lmb_bram_if_cntlr/SLMB1/Mem] SEG_lmb_bram_if_cntlr_Mem
-  create_bd_addr_seg -range 0x00010000 -offset 0x41200000 [get_bd_addr_spaces iop1/mb/Data] [get_bd_addr_segs iop1/mb1_intc/s_axi/Reg] SEG_mb1_intc_Reg
+  create_bd_addr_seg -range 0x00010000 -offset 0x41200000 [get_bd_addr_spaces iop1/mb/Data] [get_bd_addr_segs iop1/mb1_intc/S_AXI/Reg] SEG_mb1_intc_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x41C00000 [get_bd_addr_spaces iop1/mb/Data] [get_bd_addr_segs iop1/mb1_timer/S_AXI/Reg] SEG_mb1_timer_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x44A00000 [get_bd_addr_spaces iop1/mb/Data] [get_bd_addr_segs iop1/mb1_pmod_io_switch/S00_AXI/S00_AXI_reg] SEG_pmod_io_switch_0_S00_AXI_reg
   create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces iop2/mb/Data] [get_bd_addr_segs iop2/mb2_lmb/lmb_bram_if_cntlr/SLMB1/Mem] SEG_lmb_bram_if_cntlr_Mem
   create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces iop2/mb/Instruction] [get_bd_addr_segs iop2/mb2_lmb/lmb_bram_if_cntlr/SLMB/Mem] SEG_lmb_bram_if_cntlr_Mem
   create_bd_addr_seg -range 0x00010000 -offset 0x40000000 [get_bd_addr_spaces iop2/mb/Data] [get_bd_addr_segs iop2/mb2_gpio/S_AXI/Reg] SEG_mb2_gpio_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x40800000 [get_bd_addr_spaces iop2/mb/Data] [get_bd_addr_segs iop2/mb2_iic/S_AXI/Reg] SEG_mb2_iic_Reg
-  create_bd_addr_seg -range 0x00010000 -offset 0x41200000 [get_bd_addr_spaces iop2/mb/Data] [get_bd_addr_segs iop2/mb2_intc/s_axi/Reg] SEG_mb2_intc_Reg
+  create_bd_addr_seg -range 0x00010000 -offset 0x41200000 [get_bd_addr_spaces iop2/mb/Data] [get_bd_addr_segs iop2/mb2_intc/S_AXI/Reg] SEG_mb2_intc_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x44A00000 [get_bd_addr_spaces iop2/mb/Data] [get_bd_addr_segs iop2/mb2_pmod_io_switch/S00_AXI/S00_AXI_reg] SEG_mb2_pmod_io_switch_S00_AXI_reg
   create_bd_addr_seg -range 0x00010000 -offset 0x44A10000 [get_bd_addr_spaces iop2/mb/Data] [get_bd_addr_segs iop2/mb2_spi/AXI_LITE/Reg] SEG_mb2_spi_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x41C00000 [get_bd_addr_spaces iop2/mb/Data] [get_bd_addr_segs iop2/mb2_timer/S_AXI/Reg] SEG_mb2_timer_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x44A20000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/arduino_io_switch_0/S_AXI/S_AXI_reg] SEG_arduino_io_switch_0_S_AXI_reg
-  create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces iop3/mb/Instruction] [get_bd_addr_segs iop3/mb3_lmb/lmb_bram_if_cntlr/SLMB/Mem] SEG_lmb_bram_if_cntlr_Mem
   create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_lmb/lmb_bram_if_cntlr/SLMB1/Mem] SEG_lmb_bram_if_cntlr_Mem
+  create_bd_addr_seg -range 0x00010000 -offset 0x00000000 [get_bd_addr_spaces iop3/mb/Instruction] [get_bd_addr_segs iop3/mb3_lmb/lmb_bram_if_cntlr/SLMB/Mem] SEG_lmb_bram_if_cntlr_Mem
   create_bd_addr_seg -range 0x00010000 -offset 0x40000000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_gpio_subsystem/mb3_gpio_pl_sw_d1_d0/S_AXI/Reg] SEG_mb2_gpio_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x40800000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_iic_subsystem/mb3_iic_pl_sw/S_AXI/Reg] SEG_mb2_iic_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x44A10000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_spi_subsystem/mb3_spi_pl_sw/AXI_LITE/Reg] SEG_mb2_spi_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x40010000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_gpio_subsystem/mb3_gpio_pl_sw_a5_a0/S_AXI/Reg] SEG_mb3_gpio_pl_sw_a5_a0_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x40020000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_gpio_subsystem/mb3_gpio_pl_sw_d13_d2/S_AXI/Reg] SEG_mb3_gpio_pl_sw_d13_d2_Reg
-  create_bd_addr_seg -range 0x00010000 -offset 0x41200000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_intc/s_axi/Reg] SEG_mb3_intc_Reg
+  create_bd_addr_seg -range 0x00010000 -offset 0x41200000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_intc/S_AXI/Reg] SEG_mb3_intc_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x40810000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_iic_subsystem/mb3_shared_iic_sw/S_AXI/Reg] SEG_mb3_shared_iic_sw_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x44A00000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_spi_subsystem/mb3_spi_pl_sw_d13_d10/AXI_LITE/Reg] SEG_mb3_spi_pl_sw_d13_d10_Reg
   create_bd_addr_seg -range 0x00010000 -offset 0x41C00000 [get_bd_addr_spaces iop3/mb/Data] [get_bd_addr_segs iop3/mb3_timers_subsystem/mb3_timer_0/S_AXI/Reg] SEG_mb3_timer_0_Reg
@@ -3180,7 +3186,7 @@ CONFIG.C_IS_DUAL {1} \
 
   # Perform GUI Layout
   regenerate_bd_layout -layout_string {
-   guistr: "# # String gsaved with Nlview 6.5.12  2016-01-29 bk=1.3547 VDI=39 GEI=35 GUI=JA:1.6
+   guistr: "# # String gsaved with Nlview 6.6.5b  2016-09-06 bk=1.3687 VDI=39 GEI=35 GUI=JA:1.6
 #  -string -flagsOSRD
 preplace port btns_4bits -pg 1 -y 1090 -defaultsOSRD
 preplace port DDR -pg 1 -y 700 -defaultsOSRD
@@ -3227,21 +3233,21 @@ preplace portBus pmodJA_data_out -pg 1 -y 1830 -defaultsOSRD
 preplace portBus pmodJA_data_in -pg 1 -y 1680 -defaultsOSRD
 preplace portBus sw2shield_tri_out_d1_d0 -pg 1 -y 2420 -defaultsOSRD
 preplace portBus hdmi_in_hpd -pg 1 -y 970 -defaultsOSRD
-preplace inst tracebuffer_arduino -pg 1 -lvl 4 -y 120 -defaultsOSRD
+preplace inst tracebuffer_arduino -pg 1 -lvl 4 -y 110 -defaultsOSRD
 preplace inst mb_2_reset -pg 1 -lvl 5 -y 1700 -defaultsOSRD
 preplace inst constant_8bit_0 -pg 1 -lvl 2 -y 1730 -defaultsOSRD
 preplace inst rst_processing_system7_0_166M -pg 1 -lvl 2 -y 230 -defaultsOSRD
-preplace inst tracebuffer_pmods -pg 1 -lvl 4 -y 340 -defaultsOSRD
 preplace inst rst_processing_system7_0_100M -pg 1 -lvl 3 -y 540 -defaultsOSRD
+preplace inst tracebuffer_pmods -pg 1 -lvl 4 -y 330 -defaultsOSRD
 preplace inst mb_3_reset -pg 1 -lvl 5 -y 2330 -defaultsOSRD
 preplace inst swsleds_gpio -pg 1 -lvl 6 -y 1210 -defaultsOSRD
-preplace inst proc_sys_reset_pixelclk -pg 1 -lvl 4 -y 550 -defaultsOSRD
-preplace inst proc_sys_reset_142M -pg 1 -lvl 4 -y 1480 -defaultsOSRD
+preplace inst proc_sys_reset_pixelclk -pg 1 -lvl 4 -y 540 -defaultsOSRD
+preplace inst proc_sys_reset_142M -pg 1 -lvl 4 -y 1500 -defaultsOSRD
 preplace inst mb_1_reset -pg 1 -lvl 5 -y 2030 -defaultsOSRD
 preplace inst iop1 -pg 1 -lvl 6 -y 1960 -defaultsOSRD
 preplace inst audio -pg 1 -lvl 6 -y 1510 -defaultsOSRD
 preplace inst iop2 -pg 1 -lvl 6 -y 1720 -defaultsOSRD
-preplace inst concat_interrupts -pg 1 -lvl 5 -y 510 -defaultsOSRD
+preplace inst concat_interrupts -pg 1 -lvl 5 -y 500 -defaultsOSRD
 preplace inst rgbleds_gpio -pg 1 -lvl 1 -y 920 -defaultsOSRD
 preplace inst logic_1 -pg 1 -lvl 3 -y 680 -defaultsOSRD
 preplace inst iop3 -pg 1 -lvl 6 -y 2320 -defaultsOSRD
@@ -3251,119 +3257,120 @@ preplace inst mdm_1 -pg 1 -lvl 5 -y 1920 -defaultsOSRD
 preplace inst btns_gpio -pg 1 -lvl 6 -y 1090 -defaultsOSRD
 preplace inst processing_system7_0_axi_periph_1 -pg 1 -lvl 3 -y 240 -defaultsOSRD
 preplace inst mb_bram_ctrl_1 -pg 1 -lvl 5 -y 1140 -defaultsOSRD
-preplace inst video -pg 1 -lvl 5 -y 760 -defaultsOSRD
 preplace inst mb_bram_ctrl_2 -pg 1 -lvl 5 -y 1280 -defaultsOSRD
+preplace inst video -pg 1 -lvl 5 -y 760 -defaultsOSRD
 preplace inst concat_i2c -pg 1 -lvl 2 -y 2750 -defaultsOSRD
 preplace inst concat_arduino -pg 1 -lvl 3 -y 2420 -defaultsOSRD
 preplace inst mb_bram_ctrl_3 -pg 1 -lvl 5 -y 1420 -defaultsOSRD
-preplace inst axi_mem_intercon -pg 1 -lvl 5 -y 280 -defaultsOSRD
+preplace inst axi_mem_intercon -pg 1 -lvl 5 -y 270 -defaultsOSRD
 preplace inst processing_system7_0_axi_periph -pg 1 -lvl 4 -y 1020 -defaultsOSRD
 preplace inst processing_system7_0 -pg 1 -lvl 6 -y 780 -defaultsOSRD
-preplace netloc Vaux5_1 1 0 6 NJ 2180 NJ 2180 NJ 2180 NJ 2180 NJ 2180 NJ
+preplace netloc Vaux5_1 1 0 6 NJ 2180 NJ 2180 NJ 2180 NJ 2180 NJ 2180 2040J
 preplace netloc pdm_m_clk_mux_y 1 6 1 NJ
-preplace netloc video_dout 1 4 2 1710 430 2060
+preplace netloc video_dout 1 4 2 1700 120 2050
 preplace netloc pdm_audio_shutdown_mux_y 1 6 1 NJ
-preplace netloc iop3_sw2shield_tri_out_d13_d2 1 2 5 650 2580 NJ 2570 NJ 2570 NJ 2570 2710
+preplace netloc iop3_sw2shield_tri_out_d13_d2 1 2 5 650 2580 NJ 2580 NJ 2580 NJ 2580 2700
 preplace netloc processing_system7_0_FIXED_IO 1 6 1 NJ
-preplace netloc mb_3_reset_Dout 1 5 1 NJ
+preplace netloc mb_3_reset_Dout 1 5 1 2210J
 preplace netloc swsleds_gpio_GPIO2 1 6 1 NJ
-preplace netloc video_aPixelClkLckd 1 3 3 1110 220 NJ 130 2070
-preplace netloc hdmi_in_1 1 0 5 NJ 0 NJ 0 NJ 0 NJ 0 NJ
+preplace netloc video_aPixelClkLckd 1 3 3 1120 440 1530J 420 2040
+preplace netloc hdmi_in_1 1 0 5 -20J -70 NJ -70 NJ -70 NJ -70 1660J
 preplace netloc mb_2_reset_Dout 1 5 1 NJ
-preplace netloc shield2sw_data_in_a5_a0_1 1 0 6 NJ 2350 NJ 2350 590 2250 NJ 2250 NJ 2250 NJ
-preplace netloc iop3_sw2shield_scl_t_out 1 1 6 NJ 2640 NJ 2640 NJ 2640 NJ 2640 NJ 2640 2780
-preplace netloc processing_system7_0_axi_periph_1_M01_AXI 1 3 1 1060
-preplace netloc axi_mem_intercon_M00_AXI1 1 5 1 2250
-preplace netloc concat_interrupts_dout 1 5 1 2220
-preplace netloc proc_sys_reset_0_peripheral_reset 1 4 1 1670
-preplace netloc processing_system7_0_axi_periph_1_M03_AXI 1 3 1 1020
-preplace netloc mb_bram_ctrl_2_BRAM_PORTA 1 5 1 2130
-preplace netloc S_AXI_LITE_1 1 4 1 1630
-preplace netloc shield2sw_data_in_d1_d0_1 1 0 6 NJ 2410 NJ 2410 580 2240 NJ 2240 NJ 2240 NJ
-preplace netloc shield2sw_scl_i_in_1 1 0 6 NJ 2660 NJ 2660 NJ 2660 NJ 2480 NJ 2480 N
+preplace netloc shield2sw_data_in_a5_a0_1 1 0 6 10J 2250 NJ 2250 570 2250 NJ 2250 NJ 2250 2000J
+preplace netloc iop3_sw2shield_scl_t_out 1 1 6 240J 2640 NJ 2640 NJ 2640 NJ 2640 NJ 2640 2780
+preplace netloc processing_system7_0_axi_periph_1_M01_AXI 1 3 1 1050
+preplace netloc axi_mem_intercon_M00_AXI1 1 5 1 2220
+preplace netloc concat_interrupts_dout 1 5 1 2190
+preplace netloc proc_sys_reset_0_peripheral_reset 1 4 1 1650
+preplace netloc processing_system7_0_axi_periph_1_M03_AXI 1 3 1 1030
+preplace netloc mb_bram_ctrl_2_BRAM_PORTA 1 5 1 2120
+preplace netloc S_AXI_LITE_1 1 4 1 1600
+preplace netloc shield2sw_data_in_d1_d0_1 1 0 6 -10J 2240 NJ 2240 580 2240 NJ 2240 NJ 2240 2010J
+preplace netloc shield2sw_scl_i_in_1 1 0 6 NJ 2660 220J 2660 NJ 2660 NJ 2660 NJ 2660 2180
 preplace netloc processing_system7_0_DDR 1 6 1 NJ
-preplace netloc mb_bram_ctrl_3_BRAM_PORTA 1 5 1 2090
-preplace netloc dvi2rgb_0_DDC 1 5 2 NJ 590 NJ
-preplace netloc S01_AXI_1 1 4 1 1690
+preplace netloc mb_bram_ctrl_3_BRAM_PORTA 1 5 1 2080
+preplace netloc dvi2rgb_0_DDC 1 5 2 2060J 590 NJ
+preplace netloc S01_AXI_1 1 4 1 1670
 preplace netloc Vaux15_1 1 0 6 NJ 2280 NJ 2280 NJ 2280 NJ 2280 NJ 2280 NJ
-preplace netloc processing_system7_0_axi_periph_1_M00_AXI 1 3 1 1080
-preplace netloc mb_JB1_sw2pmod_data_out 1 2 5 590 1380 NJ 1380 NJ 1510 NJ 1400 2770
-preplace netloc iop3_sw2shield_data_out_d1_d0 1 2 5 640 2560 NJ 2550 NJ 2550 NJ 2550 2730
-preplace netloc hdmi_out_hpd_video_gpio_io_o 1 5 2 NJ 950 NJ
-preplace netloc constant_8bit_0_dout 1 2 1 580
-preplace netloc mdm_1_debug_sys_rst 1 5 1 2250
-preplace netloc iop3_sw2shield_sda_t_out 1 1 6 NJ 2610 NJ 2610 NJ 2610 NJ 2610 NJ 2610 2750
-preplace netloc tracebuffer_arduino_s2mm_introut 1 4 1 1630
-preplace netloc processing_system7_0_FCLK_RESET0_N 1 1 6 230 450 600 450 1050 -50 NJ -50 NJ -50 2750
-preplace netloc shield2sw_data_in_d13_d2_1 1 0 6 NJ 2470 NJ 2470 580 2630 NJ 2630 NJ 2630 NJ
-preplace netloc S_AXI1_1 1 4 1 1580
-preplace netloc processing_system7_0_axi_periph_M03_AXI 1 4 1 1530
-preplace netloc processing_system7_0_axi_periph_M02_AXI 1 4 1 1550
-preplace netloc proc_sys_reset_0_peripheral_aresetn 1 4 1 1660
+preplace netloc processing_system7_0_axi_periph_1_M00_AXI 1 3 1 990
+preplace netloc mb_JB1_sw2pmod_data_out 1 2 5 620 1400 NJ 1400 1480J 1510 2030J 1400 2770
+preplace netloc iop3_sw2shield_data_out_d1_d0 1 2 5 640 2560 NJ 2560 NJ 2560 NJ 2560 2720
+preplace netloc hdmi_out_hpd_video_gpio_io_o 1 5 2 2180J 960 2770J
+preplace netloc constant_8bit_0_dout 1 2 1 590
+preplace netloc mdm_1_debug_sys_rst 1 5 1 2220
+preplace netloc iop3_sw2shield_sda_t_out 1 1 6 230J 2610 NJ 2610 NJ 2610 NJ 2610 NJ 2610 2750
+preplace netloc tracebuffer_arduino_s2mm_introut 1 4 1 1640
+preplace netloc processing_system7_0_FCLK_RESET0_N 1 1 6 230 -30 580 -30 1040 -30 NJ -30 NJ -30 2740
+preplace netloc shield2sw_data_in_d13_d2_1 1 0 6 0J 2630 NJ 2630 580 2630 NJ 2630 NJ 2630 2110J
+preplace netloc S_AXI1_1 1 4 1 1560
+preplace netloc processing_system7_0_axi_periph_M03_AXI 1 4 1 1520
+preplace netloc processing_system7_0_axi_periph_M02_AXI 1 4 1 1570
+preplace netloc proc_sys_reset_0_peripheral_aresetn 1 4 1 1640
 preplace netloc Vaux13_1 1 0 6 NJ 2260 NJ 2260 NJ 2260 NJ 2260 NJ 2260 NJ
-preplace netloc mb_bram_ctrl_1_BRAM_PORTA 1 5 1 2140
+preplace netloc mb_bram_ctrl_1_BRAM_PORTA 1 5 1 2130
 preplace netloc iop3_sw2shield_data_out_d13_d2 1 2 5 630 2600 NJ 2600 NJ 2600 NJ 2600 2760
-preplace netloc mb_JB1_sw2pmod_tri_out 1 2 5 600 1390 NJ 1390 NJ 1500 NJ 1410 2780
-preplace netloc proc_sys_reset_142M_interconnect_aresetn 1 4 1 1480
-preplace netloc rst_processing_system7_0_166M_peripheral_aresetn 1 2 3 600 60 1070 230 1670
-preplace netloc rgbled_gpio_GPIO 1 1 6 NJ 730 NJ 730 NJ 660 NJ 1000 NJ 1000 NJ
-preplace netloc processing_system7_0_axi_periph_M11_AXI 1 4 2 NJ 1490 NJ
+preplace netloc mb_JB1_sw2pmod_tri_out 1 2 5 630 1410 NJ 1410 1470J 1500 2040J 1410 2780
+preplace netloc proc_sys_reset_142M_interconnect_aresetn 1 4 1 1660
+preplace netloc rst_processing_system7_0_166M_peripheral_aresetn 1 2 3 590 40 1060 220 1650
+preplace netloc rgbled_gpio_GPIO 1 1 6 210J -20 NJ -20 NJ -20 NJ -20 NJ -20 2780J
+preplace netloc processing_system7_0_axi_periph_M11_AXI 1 4 2 1490J 1490 2050J
 preplace netloc iop3_sw2shield_sda_o_out 1 6 1 NJ
-preplace netloc ctrl_1 1 4 1 1620
-preplace netloc axi_dma_0_M_AXI_S2MM 1 4 1 1660
+preplace netloc processing_system7_0_axi_periph_M13_AXI 1 4 1 1630
+preplace netloc ctrl_1 1 4 1 1590
+preplace netloc axi_dma_0_M_AXI_S2MM 1 4 1 1540
 preplace netloc processing_system7_0_IIC_0 1 6 1 NJ
-preplace netloc Vp_Vn_1 1 0 6 NJ 2190 NJ 2190 NJ 2190 NJ 2190 NJ 2190 NJ
-preplace netloc processing_system7_0_axi_periph_M12_AXI 1 0 5 0 10 NJ 10 NJ 10 NJ 10 1490
-preplace netloc processing_system7_0_axi_periph_M01_AXI 1 4 2 NJ 1010 NJ
-preplace netloc rst_processing_system7_0_166M_interconnect_aresetn 1 2 3 580 -40 NJ -40 1710
-preplace netloc pmod2sw_data_in_1 1 0 6 NJ 1680 NJ 1680 580 1620 NJ 1620 NJ 1640 NJ
+preplace netloc Vp_Vn_1 1 0 6 NJ 2200 NJ 2200 NJ 2200 NJ 2200 NJ 2200 2030J
+preplace netloc processing_system7_0_axi_periph_M12_AXI 1 0 5 -10 0 NJ 0 NJ 0 NJ 0 1480
+preplace netloc processing_system7_0_axi_periph_M01_AXI 1 4 2 1580J 1070 NJ
+preplace netloc rst_processing_system7_0_166M_interconnect_aresetn 1 2 3 570 -50 NJ -50 1680
+preplace netloc pmod2sw_data_in_1 1 0 6 0J 1620 NJ 1620 590 1620 NJ 1620 1470J 1650 2070J
 preplace netloc iop3_sw2shield_scl_o_out 1 6 1 NJ
-preplace netloc pmod2sw_data_in_2 1 0 6 NJ 1780 NJ 1780 590 1870 NJ 1780 NJ 1780 N
-preplace netloc processing_system7_0_FCLK_CLK0 1 0 7 10 630 NJ 630 580 630 1080 450 1610 960 2170 1010 2740
-preplace netloc pdm_m_data_i_1 1 0 6 NJ 1600 NJ 1600 NJ 1600 NJ 1600 NJ 1610 NJ
-preplace netloc microblaze_0_debug 1 5 1 2050
-preplace netloc processing_system7_0_FCLK_CLK1 1 3 4 1120 640 1530 950 2200 980 2730
-preplace netloc video_PixelClk 1 3 3 1120 440 NJ 440 2050
-preplace netloc processing_system7_0_FCLK_CLK2 1 4 3 1710 990 NJ 990 2720
-preplace netloc rst_processing_system7_0_100M_interconnect_aresetn 1 3 1 1020
-preplace netloc concat_pmods_dout 1 3 1 1010
-preplace netloc processing_system7_0_axi_periph_M00_AXI 1 4 2 NJ 970 NJ
-preplace netloc shield2sw_sda_i_in_1 1 0 6 NJ 2640 NJ 2670 NJ 2670 NJ 2500 NJ 2500 N
-preplace netloc processing_system7_0_FCLK_CLK3 1 1 6 230 140 590 50 1090 -30 1700 120 2230 960 2710
+preplace netloc pmod2sw_data_in_2 1 0 6 -10J 1870 NJ 1870 620 1870 NJ 1870 1590J 1780 N
+preplace netloc processing_system7_0_FCLK_CLK0 1 0 7 0 630 NJ 630 570 630 1050 630 1540 970 2160 1000 2730
+preplace netloc pdm_m_data_i_1 1 0 6 -10J 1610 NJ 1610 NJ 1610 NJ 1610 1480J 1620 2090J
+preplace netloc microblaze_0_debug 1 5 1 2030
+preplace netloc processing_system7_0_FCLK_CLK1 1 3 4 1120 640 1620 980 2030 980 2720
+preplace netloc video_PixelClk 1 3 3 1110 430 NJ 430 2030
+preplace netloc processing_system7_0_FCLK_CLK2 1 4 3 1700 990 NJ 990 2710
+preplace netloc rst_processing_system7_0_100M_interconnect_aresetn 1 3 1 990
+preplace netloc concat_pmods_dout 1 3 1 1070
+preplace netloc processing_system7_0_axi_periph_M00_AXI 1 4 2 1490J 1000 2040J
+preplace netloc shield2sw_sda_i_in_1 1 0 6 NJ 2640 210J 2670 NJ 2670 NJ 2670 NJ 2670 2210
+preplace netloc processing_system7_0_FCLK_CLK3 1 1 6 240 140 600 60 1000 210 1690 110 2210 950 2700
 preplace netloc pwm_audio_o_mux_y 1 6 1 NJ
-preplace netloc S_AXI_1 1 4 1 1560
+preplace netloc S_AXI_1 1 4 1 1510
 preplace netloc processing_system7_0_axi_periph_1_M02_AXI 1 3 1 1010
-preplace netloc mb_1_reset_Dout 1 5 1 NJ
-preplace netloc ctrl1_1 1 4 1 1650
-preplace netloc Vaux6_1 1 0 6 NJ 2210 NJ 2210 NJ 2210 NJ 2210 NJ 2210 NJ
-preplace netloc axi_gpio_video_gpio_io_o 1 5 2 NJ 970 NJ
-preplace netloc iop3_sw2shield_data_out_a5_a0 1 2 5 600 2590 NJ 2590 NJ 2590 NJ 2590 2770
-preplace netloc iop3_sw2shield_tri_out_d1_d0 1 2 5 610 2620 NJ 2620 NJ 2620 NJ 2620 2740
+preplace netloc mb_1_reset_Dout 1 5 1 2210J
+preplace netloc ctrl1_1 1 4 1 1550
+preplace netloc Vaux6_1 1 0 6 NJ 2220 NJ 2220 NJ 2220 NJ 2220 NJ 2220 NJ
+preplace netloc axi_gpio_video_gpio_io_o 1 5 2 2170J 970 NJ
+preplace netloc iop3_sw2shield_data_out_a5_a0 1 2 5 590 2590 NJ 2590 NJ 2590 NJ 2590 2770
+preplace netloc iop3_sw2shield_tri_out_d1_d0 1 2 5 600 2620 NJ 2620 NJ 2620 NJ 2620 2740
 preplace netloc pmod_io_switch_0_sw2pmod_tri_out 1 2 5 650 2080 NJ 2080 NJ 2080 NJ 2080 2740
-preplace netloc processing_system7_0_M_AXI_GP0 1 3 4 1100 -20 NJ -20 NJ -20 2720
-preplace netloc audio_path_sel_Dout 1 5 1 NJ
-preplace netloc processing_system7_0_M_AXI_GP1 1 2 5 640 -10 NJ -10 NJ -10 NJ -10 2710
-preplace netloc proc_sys_reset_142M_peripheral_aresetn 1 4 1 1690
-preplace netloc logic_1_dout 1 3 3 1000 -60 NJ -60 2120
-preplace netloc concat_i2c_dout 1 2 1 590
-preplace netloc Vaux1_1 1 0 6 NJ 2160 NJ 2160 NJ 2160 NJ 2160 NJ 2160 NJ
-preplace netloc axi_mem_intercon_M00_AXI 1 5 1 2240
-preplace netloc Vaux9_1 1 0 6 NJ 2230 NJ 2230 NJ 2230 NJ 2230 NJ 2230 NJ
-preplace netloc axi_dma_0_s2mm_introut 1 4 1 1620
-preplace netloc concat_arduino_dout 1 3 1 1030
-preplace netloc processing_system7_0_GPIO_O 1 4 3 1710 1630 NJ 1600 2760
+preplace netloc processing_system7_0_M_AXI_GP0 1 3 4 1100 -10 NJ -10 NJ -10 2700
+preplace netloc audio_path_sel_Dout 1 5 1 2070J
+preplace netloc processing_system7_0_M_AXI_GP1 1 2 5 610 1600 NJ 1600 1490J 1610 2100J 1600 2750
+preplace netloc proc_sys_reset_142M_peripheral_aresetn 1 4 1 1680
+preplace netloc logic_1_dout 1 3 3 1020 -60 NJ -60 2110
+preplace netloc concat_i2c_dout 1 2 1 570
+preplace netloc Vaux1_1 1 0 6 NJ 2160 NJ 2160 NJ 2160 NJ 2160 NJ 2160 2050J
+preplace netloc axi_mem_intercon_M00_AXI 1 5 1 2200
+preplace netloc Vaux9_1 1 0 6 -20J 2230 NJ 2230 NJ 2230 NJ 2230 NJ 2230 2020J
+preplace netloc axi_dma_0_s2mm_introut 1 4 1 1540
+preplace netloc concat_arduino_dout 1 3 1 1080
+preplace netloc processing_system7_0_GPIO_O 1 4 3 1700 1630 2060J 1380 2760
 preplace netloc swsleds_gpio_GPIO 1 6 1 NJ
 preplace netloc iop3_spi_sw_shield 1 6 1 NJ
 preplace netloc btns_gpio_GPIO 1 6 1 NJ
-preplace netloc processing_system7_0_axi_periph_M04_AXI 1 4 1 1520
-preplace netloc mdm_1_MBDEBUG_1 1 5 1 2240
-preplace netloc rst_processing_system7_0_100M_peripheral_aresetn 1 0 6 10 990 NJ 990 NJ 990 1090 460 1540 1620 2160
-preplace netloc pmod_io_switch_0_sw2pmod_data_out 1 2 5 640 1860 NJ 1840 NJ 1840 NJ 1840 2750
-preplace netloc video_TMDS1 1 5 2 NJ 610 NJ
-preplace netloc s00_axi_1 1 4 1 1640
-preplace netloc mdm_1_MBDEBUG_2 1 5 1 2070
-preplace netloc iop3_sw2shield_tri_out_a5_a0 1 2 5 620 2570 NJ 2560 NJ 2560 NJ 2560 2720
-levelinfo -pg 1 -30 110 410 830 1310 1860 2480 2800 -top -70 -bot 2830
+preplace netloc processing_system7_0_axi_periph_M04_AXI 1 4 1 1500
+preplace netloc mdm_1_MBDEBUG_1 1 5 1 2140
+preplace netloc rst_processing_system7_0_100M_peripheral_aresetn 1 0 6 10 780 NJ 780 NJ 780 1090 450 1530 1640 2150
+preplace netloc pmod_io_switch_0_sw2pmod_data_out 1 2 5 640 1860 1120J 1840 NJ 1840 NJ 1840 2740
+preplace netloc video_TMDS1 1 5 2 2080J 610 NJ
+preplace netloc s00_axi_1 1 4 1 1610
+preplace netloc mdm_1_MBDEBUG_2 1 5 1 2060
+preplace netloc iop3_sw2shield_tri_out_a5_a0 1 2 5 610 2570 NJ 2570 NJ 2570 NJ 2570 2710
+levelinfo -pg 1 -40 110 410 830 1310 1860 2480 2800 -top -80 -bot 2830
 ",
 }
 
@@ -3381,6 +3388,7 @@ levelinfo -pg 1 -30 110 410 830 1310 1860 2480 2800 -top -70 -bot 2830
 
 create_root_design ""
 
+
 # Additional steps to get to bitstream
 # generate toplevel wrapper files
 make_wrapper -files [get_files ./base/base.srcs/sources_1/bd/system/system.bd] -top
@@ -3395,17 +3403,3 @@ add_files -norecurse ./src/top.v
 update_compile_order -fileset sources_1
 set_property top top [current_fileset]
 update_compile_order -fileset sources_1
-
-# call implement
-launch_runs impl_1 -to_step write_bitstream -jobs 4
-wait_on_run impl_1
-
-# This hwardware definition file will be used for microblaze projects
-file mkdir ./base/base.sdk
-write_hwdef -force  -file ./base/base.sdk/base.hdf
-file copy -force ./base/base.sdk/base.hdf ../../sdk/
-
-# move and rename bitstream to final location
-file copy -force ./base/base.runs/impl_1/top.bit ../../bitstream/base.bit
-
-
