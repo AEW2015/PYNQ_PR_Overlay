@@ -763,6 +763,83 @@ class Bitstream(PL):
         PL._ip_dict = {}
         PL._gpio_dict = {}
         PL._server_update()
+class Bitstream_Part(PL):
+    """This class instantiates a programmable logic bitstream.
+    
+    Attributes
+    ----------
+    bitfile_name : str
+        The absolute path of the bitstream.
+    timestamp : str
+        Timestamp when loading the bitstream. Format:
+        year, month, day, hour, minute, second, microsecond
+        
+    """
+    
+    def __init__(self, bitfile_name):
+        """Return a new Bitstream object. 
+        
+        Users can either specify an absolute path to the bitstream file 
+        (e.g. '/home/xilinx/src/pynq/bitstream/base.bit'),
+        or only a relative path.
+        (e.g. 'base.bit').
+        
+        Note
+        ----
+        self.bitstream always stores the absolute path of the bitstream.
+        
+        Parameters
+        ----------
+        bitfile_name : str
+            The bitstream absolute path or name as a string.
+            
+        """
+        super().__init__()
+        
+        if not isinstance(bitfile_name, str):
+            raise TypeError("Bitstream name has to be a string.")
+        
+        if os.path.isfile(bitfile_name):
+            self.bitfile_name = bitfile_name
+        elif os.path.isfile(general_const.BS_SEARCH_PATH + bitfile_name):
+            self.bitfile_name = general_const.BS_SEARCH_PATH + bitfile_name
+        else:
+            raise IOError('Bitstream file {} does not exist.'\
+                            .format(bitfile_name))
+            
+        self.timestamp = ''
+
+    def download(self):
+        """The method to download the bitstream onto PL. 
+        
+        Note
+        ----
+        The class variables held by the singleton PL will also be updated.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+            
+        """
+        # Compose bitfile name, open bitfile
+        with open(self.bitfile_name, 'rb') as f:
+            buf = f.read()
+        
+        # Set is_partial_bitfile device attribute to 0        
+        with open(general_const.BS_IS_PARTIAL, 'w') as fd:
+            fd.write('1')
+        
+        # Write bitfile to xdevcfg device
+        with open(general_const.BS_XDEVCFG, 'wb') as f:
+            f.write(buf)
+        
+
+
+
         
 class Overlay(PL):
     """This class keeps track of a single bitstream's state and contents.
@@ -825,6 +902,7 @@ class Overlay(PL):
         else:
             raise IOError('Bitstream file {} does not exist.'\
                             .format(bitfile_name))
+        
         
         # Set the bitstream
         self.bitstream = Bitstream(self.bitfile_name)
@@ -922,8 +1000,8 @@ class Overlay(PL):
         """
         tcl_name = _get_tcl_name(self.bitfile_name)
         self.ip_dict = _get_dict_ip_addr(tcl_name)
-        if self.is_loaded():
-            PL.reset_ip_dict()
+        #if self.is_loaded():
+        PL.reset_ip_dict()
     
     def reset_gpio_dict(self):
         """This function resets the entire GPIO dictionary of the overlay.
@@ -945,6 +1023,365 @@ class Overlay(PL):
         """
         tcl_name = _get_tcl_name(self.bitfile_name)
         self.gpio_dict = _get_dict_gpio(tcl_name)
+        #if self.is_loaded():
+        PL.reset_gpio_dict()
+            
+    def reset(self):
+        """This function resets the IP and GPIO dictionaries of the overlay.
+        
+        Note
+        ----
+        This function should be used with caution. If the overlay is loaded, 
+        it also resets the IP and GPIO dictionaries in the PL.
+        
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        
+        """
+        self.reset_ip_dict()
+        self.reset_gpio_dict()
+        
+    def get_ip_addr_base(self, ip_name):
+        """This method returns the base address of an IP in this overlay.
+        
+        Note
+        ----
+        The IP dictionary stores the following information:
+        1. name (str), the key of an entry.
+        2. address (str), the base address of the IP.
+        3. range (str), the address range of the IP.
+        4. state (str), the state information about the IP.
+        
+        Parameters
+        ----------
+        ip_name : str
+            The name of the addressable IP.
+
+        Returns
+        -------
+        str
+            The base address in hex format.
+        
+        """
+        return self.ip_dict[ip_name][0]
+        
+    def get_ip_addr_range(self, ip_name):
+        """This method returns an IP's address range in this overlay.
+        
+        Note
+        ----
+        The IP dictionary stores the following information:
+        1. name (str), the key of an entry.
+        2. address (str), the base address of the IP.
+        3. range (str), the address range of the IP.
+        4. state (str), the state information about the IP.
+        
+        Parameters
+        ----------
+        ip_name : str
+            The name of the addressable IP.
+
+        Returns
+        -------
+        str
+            The address range in hex format.
+        
+        """
+        return self.ip_dict[ip_name][1]
+        
+    def get_ip_state(self, ip_name):
+        """This method returns the state of an addressable IP.
+        
+        Note
+        ----
+        The IP dictionary stores the following information:
+        1. name (str), the key of an entry.
+        2. address (str), the base address of the IP.
+        3. range (str), the address range of the IP.
+        4. state (str), the state information about the IP.
+        
+        Parameters
+        ----------
+        ip_name : str
+            The name of the addressable IP.
+
+        Returns
+        -------
+        str
+            The state of the addressable IP.
+        
+        """
+        return self.ip_dict[ip_name][2]
+        
+    def load_ip_data(self, ip_name, data):
+        """This method loads the data to the addressable IP.
+        
+        Calls the method in the super class to load the data. This method can
+        be used to program the IP. For example, users can use this method to 
+        load the program to the Microblaze processors on PL.
+        
+        Note
+        ----
+        The data is assumed to be in binary format (.bin). The data name will
+        be stored as a state information in the IP dictionary.
+        
+        Parameters
+        ----------
+        ip_name : str
+            The name of the addressable IP.
+        data : str
+            The absolute path of the data to be loaded.
+        
+        Returns
+        -------
+        None
+        
+        """
+        super().load_ip_data(ip_name, data)
+        self.ip_dict[ip_name][2] = data
+        
+    def get_gpio_user_ix(self, gpio_name):
+        """This method returns the user index of the GPIO.
+        
+        Note
+        ----
+        The PS GPIO dictionary stores the following information:
+        1. name (str), the key of an entry.
+        2. pin (int), the user index of the GPIO, starting from 0.
+        3. state (str), the state information about the GPIO.
+        
+        Parameters
+        ----------
+        gpio_name : str
+            The name of the PS GPIO pin.
+
+        Returns
+        -------
+        int
+            The user index of the GPIO, starting from 0.
+        
+        """
+        return self.gpio_dict[gpio_name][0]
+        
+    def get_gpio_state(self, gpio_name):
+        """This method returns the state of the GPIO.
+        
+        Note
+        ----
+        The PS GPIO dictionary stores the following information:
+        1. name (str), the key of an entry.
+        2. pin (int), the user index of the GPIO, starting from 0.
+        3. state (str), the state information about the GPIO.
+        
+        Parameters
+        ----------
+        gpio_name : str
+            The name of the PS GPIO pin.
+
+        Returns
+        -------
+        str
+            The state information about the GPIO.
+        
+        """
+        return self.gpio_dict[gpio_name][1]
+            
+class Overlay_Part(PL):
+    """This class keeps track of a single bitstream_part's state and contents.
+    
+    The overlay class holds the state of the bitstream_part and enables run-time 
+    protection of bindlings. 
+    Our definition of overlay is: "post-bitstream_part configurable design". 
+    Hence, this class must expose configurability through content discovery 
+    and runtime protection.
+    
+    The IP dictionary stores the following information:
+    1. name (str), the key of an entry.
+    2. address (str), the base address of the IP.
+    3. range (str), the address range of the IP.
+    4. state (str), the state information about the IP.
+    
+    The PS GPIO dictionary stores the following information:
+    1. name (str), the key of an entry.
+    2. pin (int), the user index of the GPIO, starting from 0.
+    3. state (str), the state information about the GPIO.
+    
+    Attributes
+    ----------
+    bitfile_name : str
+        The absolute path of the bitstream_part.
+    bitstream_part : bitstream_part
+        The corresponding bitstream_part object.
+    ip_dict : dict
+        The addressable IP instances on the overlay.
+    gpio_dict : dict
+        The dictionary storing the PS GPIO pins.
+        
+    """
+    
+    def __init__(self, bitfile_name,tcl_name):
+        """Return a new Overlay object.
+        
+        An overlay instantiates a bitstream_part object as a member initially.
+        
+        Note
+        ----
+        This class requires a Vivado '.tcl' file to be next to bitstream_part file 
+        with same base name (e.g. base.bit and base.tcl).
+        
+        Parameters
+        ----------
+        bitfile_name : str
+            The bitstream_part name or absolute path as a string.
+            
+        """
+        super().__init__()
+        
+        # Set the bitfile name
+        if not isinstance(bitfile_name, str):
+            raise TypeError("bitstream_part name has to be a string.")
+        if os.path.isfile(bitfile_name):
+            self.bitfile_name = bitfile_name
+        elif os.path.isfile(general_const.BS_SEARCH_PATH + bitfile_name):
+            self.bitfile_name = general_const.BS_SEARCH_PATH + bitfile_name
+        else:
+            raise IOError('bitstream_part file {} does not exist.'\
+                            .format(bitfile_name))
+                # Set the bitfile name
+        if not isinstance(tcl_name, str):
+            raise TypeError("Bitstream name has to be a string.")
+        if os.path.isfile(tcl_name):
+            self.tcl_name = tcl_name
+        elif os.path.isfile(general_const.BS_SEARCH_PATH + tcl_name):
+            self.tcl_name = general_const.BS_SEARCH_PATH + tcl_name
+        else:
+            raise IOError('Bitstream file {} does not exist.'\
+                            .format(tcl_name))
+        
+        # Set the bitstream_part
+        self.bitstream_part = Bitstream_Part(self.bitfile_name)
+        
+        # Set the IP dictionary
+        self.ip_dict = _get_dict_ip_addr(self.tcl_name)
+                        
+        # Set the GPIO dictionary
+        self.gpio_dict = _get_dict_gpio(self.tcl_name)
+        format(self.tcl_name)
+        
+    def download(self):
+        """The method to download a bitstream_part onto PL.
+        
+        Note
+        ----
+        After the bitstream_part has been downloaded, the "timestamp" in PL will be 
+        updated. In addition, both of the IP and GPIO dictionaries on PL will 
+        be reset automatically. 
+        
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        
+        """
+        self.bitstream_part.download()
+        PL.reset_ip_dict()
+        PL.reset_gpio_dict()
+        
+    def get_timestamp(self):
+        """This method returns the timestamp of the bitstream_part.
+        
+        The timestamp will be empty string until the bitstream_part is downloaded.
+        
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        str
+            The timestamp when the bitstream_part is downloaded.
+            
+        """
+        return self.bitstream_part.timestamp
+            
+    def is_loaded(self):
+        """This method checks whether a bitstream_part is loaded.
+        
+        This method returns true if the loaded PL bitstream_part is same 
+        as this Overlay's member bitstream_part.
+        
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        bool
+            True if bitstream_part is loaded.
+            
+        """
+        PL._client_request()
+        PL._server_update()
+        if not self.bitstream_part.timestamp=='':
+            return self.bitstream_part.timestamp==PL._timestamp
+        else:
+            return self.bitfile_name==PL._bitfile_name
+            
+    def reset_ip_dict(self):
+        """This function resets the entire IP dictionary of the overlay.
+        
+        This function is usually called before instantiating new objects on
+        the same overlay. In that case, the GPIO dictionary does not have to
+        be reset.
+        
+        Note
+        ----
+        This function should be used with caution since it resets the IP
+        dictionary; the state information will be lost. If the overlay is 
+        loaded, it also resets the IP dictionary in the PL.
+        
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        
+        """
+
+        self.ip_dict = _get_dict_ip_addr(self.tcl_name)
+        if self.is_loaded():
+            PL.reset_ip_dict()
+    
+    def reset_gpio_dict(self):
+        """This function resets the entire GPIO dictionary of the overlay.
+        
+        Note
+        ----
+        This function should be used with caution since it resets the 
+        GPIO dictionary. If the overlay is loaded, it also resets the GPIO
+        dictionary in the PL.
+        
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        
+        """
+
+        self.gpio_dict = _get_dict_gpio(self.tcl_name)
         if self.is_loaded():
             PL.reset_gpio_dict()
             
@@ -1113,3 +1550,4 @@ class Overlay(PL):
         """
         return self.gpio_dict[gpio_name][1]
             
+

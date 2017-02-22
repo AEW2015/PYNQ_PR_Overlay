@@ -38,5 +38,8 @@ from .mmio import MMIO
 from .pl import PL
 from .pl import Bitstream
 from .pl import Overlay
+from .pl import Bitstream_Part
+from .pl import Overlay_Part
+
 
 __all__ = ['tests', 'board', 'iop', 'drivers']

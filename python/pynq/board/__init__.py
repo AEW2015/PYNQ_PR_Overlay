@@ -36,3 +36,5 @@ from .led import LED
 from .rgbled import RGBLED
 from .switch import Switch
 from .button import Button
+from .registers import Register
+
