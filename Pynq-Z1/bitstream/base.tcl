@@ -3405,5 +3405,6 @@ set_property top top [current_fileset]
 update_compile_order -fileset sources_1
 
 launch_runs synth_1 -jobs 2
+open_run synth_1 -name synth_1
 
 write_checkpoint ../Parital_Designs/Static/Static.dcp
