@@ -3403,3 +3403,7 @@ add_files -norecurse ./src/top.v
 update_compile_order -fileset sources_1
 set_property top top [current_fileset]
 update_compile_order -fileset sources_1
+
+launch_runs synth_1 -jobs 2
+
+write_checkpoint ../Parital_Designs/Static/Static.dcp
