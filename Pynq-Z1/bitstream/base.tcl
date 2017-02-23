@@ -3407,4 +3407,4 @@ update_compile_order -fileset sources_1
 launch_runs synth_1 -jobs 2
 open_run synth_1 -name synth_1
 
-write_checkpoint -force ../Parital_Designs/Static/top.dcp 
+write_checkpoint -force ../Partial_Designs/Static/top.dcp 
