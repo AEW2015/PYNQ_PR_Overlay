@@ -84,6 +84,7 @@ port (
 );
 end Video_Box;
 
+--Begin Invert Architecture Design
 architecture Behavioral of Video_Box is
 
 --Complete RGB value
@@ -98,6 +99,7 @@ red_i <= full_const - unsigned(RGB_IN_I(23 downto 16));
 green_i <= full_const - unsigned(RGB_IN_I(15 downto 8));
 blue_i <= full_const - unsigned(RGB_IN_I(7 downto 0));
 
+--Concatenate the inverted Red, Green, and Blue values together
 --Route the inverted RGB values out
 RGB_IN_O 	<= std_logic_vector(red_i&green_i&blue_i);
 
@@ -120,3 +122,4 @@ slv_reg6out <= slv_reg6;
 slv_reg7out <= slv_reg7;
 
 end Behavioral;
+--End Invert Architecture Design
