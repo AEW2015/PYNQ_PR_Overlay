@@ -87,67 +87,67 @@ end Video_Box;
 --Begin Grayscale architecture design
 architecture Behavioral of Video_Box is
 
---Define a Divide function for use in the grayscale
-function  divide  (a : UNSIGNED; b : UNSIGNED) return UNSIGNED is
---Variables used in the divide algorithm
-variable a1 : unsigned(a'length-1 downto 0):=a;
-variable b1 : unsigned(b'length-1 downto 0):=b;
-variable p1 : unsigned(b'length downto 0):= (others => '0');
-variable i : integer:=0;
+	--Define a Divide function for use in the grayscale
+	function  divide  (a : UNSIGNED; b : UNSIGNED) return UNSIGNED is
+	--Variables used in the divide algorithm
+	variable a1 : unsigned(a'length-1 downto 0):=a;
+	variable b1 : unsigned(b'length-1 downto 0):=b;
+	variable p1 : unsigned(b'length downto 0):= (others => '0');
+	variable i : integer:=0;
 
---Begin Divide Algorithm
+	--Begin Divide Algorithm
+	begin
+		for i in 0 to b'length-1 loop
+			p1(b'length-1 downto 1) := p1(b'length-2 downto 0);
+			p1(0) := a1(a'length-1);
+			a1(a'length-1 downto 1) := a1(a'length-2 downto 0);
+			p1 := p1-b1;
+			if(p1(b'length-1) ='1') then
+				a1(0) :='0';
+				p1 := p1+b1;
+			else
+				a1(0) :='1';
+			end if;
+		end loop;
+	return a1;
+
+	end divide; 
+	--End Divide
+
+	--Grayscale signal (contains the average value of all three pixels)
+	signal grayscale : std_logic_vector(7 downto 0);
+	--Const of a three
+	signal three_const : unsigned(7 downto 0):= "00000011";
+	--Sum signal
+	signal sum : unsigned(9 downto 0);	
+
 begin
-for i in 0 to b'length-1 loop
-p1(b'length-1 downto 1) := p1(b'length-2 downto 0);
-p1(0) := a1(a'length-1);
-a1(a'length-1 downto 1) := a1(a'length-2 downto 0);
-p1 := p1-b1;
-if(p1(b'length-1) ='1') then
-a1(0) :='0';
-p1 := p1+b1;
-else
-a1(0) :='1';
-end if;
-end loop;
-return a1;
 
-end divide; 
---End Divide
+	--Add the value of Red, Green, and Blue together
+	sum <= unsigned("00" & RGB_IN_I(23 downto 16)) + unsigned("00" & RGB_IN_I(15 downto 8)) + unsigned("00" & RGB_IN_I(7 downto 0));
+	--Divide by 3 to get the average RGB value for the pixel
+	grayscale <= std_logic_vector(divide ( sum, three_const )(6 downto 0))&'0';
 
---Grayscale signal (contains the average value of all three pixels)
-signal grayscale : std_logic_vector(7 downto 0);
---Const of a three
-signal three_const : unsigned(7 downto 0):= "00000011";
---Sum signal
-signal sum : unsigned(9 downto 0);
+	--Concatenate the grayscale average together and place on the RGB output
+	RGB_IN_O 	<= grayscale & grayscale & grayscale;
 
-begin
+	--Pass all the other signals through the region
+	VDE_IN_O	<= VDE_IN_I;
+	HB_IN_O		<= HB_IN_I;
+	VB_IN_O		<= VB_IN_I;
+	HS_IN_O		<= HS_IN_I;
+	VS_IN_O		<= VS_IN_I;
+	ID_IN_O		<= ID_IN_I;
 
---Add the value of Red, Green, and Blue together
-sum <= unsigned("00" & RGB_IN_I(23 downto 16)) + unsigned("00" & RGB_IN_I(15 downto 8)) + unsigned("00" & RGB_IN_I(7 downto 0));
---Divide by 3 to get the average RGB value for the pixel
-grayscale <= std_logic_vector(divide ( sum, three_const )(6 downto 0))&'0';
-
---Concatenate the grayscale average together and place on the RGB output
-RGB_IN_O 	<= grayscale & grayscale & grayscale;
-
---Pass all the other signals through the region
-VDE_IN_O	<= VDE_IN_I;
-HB_IN_O		<= HB_IN_I;
-VB_IN_O		<= VB_IN_I;
-HS_IN_O		<= HS_IN_I;
-VS_IN_O		<= VS_IN_I;
-ID_IN_O		<= ID_IN_I;
-
---Pass the registers through the region
-slv_reg0out <= slv_reg0;
-slv_reg1out <= slv_reg1;
-slv_reg2out <= slv_reg2;
-slv_reg3out <= slv_reg3;
-slv_reg4out <= slv_reg4;
-slv_reg5out <= slv_reg5;
-slv_reg6out <= slv_reg6;
-slv_reg7out <= slv_reg7;
+	--Pass the registers through the region
+	slv_reg0out <= slv_reg0;
+	slv_reg1out <= slv_reg1;
+	slv_reg2out <= slv_reg2;
+	slv_reg3out <= slv_reg3;
+	slv_reg4out <= slv_reg4;
+	slv_reg5out <= slv_reg5;
+	slv_reg6out <= slv_reg6;
+	slv_reg7out <= slv_reg7;
 
 end Behavioral;
 --End Grayscale
