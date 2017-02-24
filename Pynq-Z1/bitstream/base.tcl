@@ -3425,6 +3425,9 @@ file copy -force ./base/base.sdk/base.hdf ../../sdk/
 
 puts "Write Checkpoint"
 # move and rename top dcp to final location
-file copy -force ./base/base.runs/synth_1/top.dcp ../Partial_Designs/Static/top.dcp 
+open_run synth_1 -name synth_1
+write_checkpoint -force ../Partial_Designs/Static/top.dcp
 
 puts "Done"
+#Close project when finished
+close_project
