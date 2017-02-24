@@ -53,9 +53,10 @@ port (
     slv_reg6out : out std_logic_vector(31 downto 0);  
     slv_reg7out : out std_logic_vector(31 downto 0);
     
-    --Bus Clock
+    -- Bus Clock
     CLK : in std_logic;
-    --Video
+	
+	-- Video input Signals
     RGB_IN_I : in std_logic_vector(23 downto 0); -- Parallel video data (required)
     VDE_IN_I : in std_logic; -- Active video Flag (optional)
     HB_IN_I : in std_logic; -- Horizontal blanking signal (optional)
@@ -63,7 +64,8 @@ port (
     HS_IN_I : in std_logic; -- Horizontal sync signal (optional)
     VS_IN_I : in std_logic; -- Veritcal sync signal (optional)
     ID_IN_I : in std_logic; -- Field ID (optional)
-    --  additional ports here
+	
+    -- Video Output Signals
     RGB_IN_O : out std_logic_vector(23 downto 0); -- Parallel video data (required)
     VDE_IN_O : out std_logic; -- Active video Flag (optional)
     HB_IN_O : out std_logic; -- Horizontal blanking signal (optional)
@@ -72,22 +74,28 @@ port (
     VS_IN_O : out std_logic; -- Veritcal sync signal (optional)
     ID_IN_O : out std_logic; -- Field ID (optional)
     
+	--Pixel Clock
     PIXEL_CLK_IN : in std_logic;
     
+	--Signals that give the x and y coordinates of the current pixel
     X_Cord : in std_logic_vector(15 downto 0);
     Y_Cord : in std_logic_vector(15 downto 0)
 
 );
 end Video_Box;
 
+--Begin Grayscale architecture design
 architecture Behavioral of Video_Box is
 
+--Define a Divide function for use in the grayscale
 function  divide  (a : UNSIGNED; b : UNSIGNED) return UNSIGNED is
+--Variables used in the divide algorithm
 variable a1 : unsigned(a'length-1 downto 0):=a;
 variable b1 : unsigned(b'length-1 downto 0):=b;
 variable p1 : unsigned(b'length downto 0):= (others => '0');
 variable i : integer:=0;
 
+--Begin Divide Algorithm
 begin
 for i in 0 to b'length-1 loop
 p1(b'length-1 downto 1) := p1(b'length-2 downto 0);
@@ -103,19 +111,27 @@ end if;
 end loop;
 return a1;
 
-end divide;
+end divide; 
+--End Divide
 
+--Grayscale signal (contains the average value of all three pixels)
 signal grayscale : std_logic_vector(7 downto 0);
+--Const of a three
 signal three_const : unsigned(7 downto 0):= "00000011";
+--Sum signal
 signal sum : unsigned(9 downto 0);
 
 begin
 
+--Add the value of Red, Green, and Blue together
 sum <= unsigned("00" & RGB_IN_I(23 downto 16)) + unsigned("00" & RGB_IN_I(15 downto 8)) + unsigned("00" & RGB_IN_I(7 downto 0));
+--Divide by 3 to get the average RGB value for the pixel
 grayscale <= std_logic_vector(divide ( sum, three_const )(6 downto 0))&'0';
 
-
+--Concatenate the grayscale average together and place on the RGB output
 RGB_IN_O 	<= grayscale & grayscale & grayscale;
+
+--Pass all the other signals through the region
 VDE_IN_O	<= VDE_IN_I;
 HB_IN_O		<= HB_IN_I;
 VB_IN_O		<= VB_IN_I;
@@ -123,6 +139,7 @@ HS_IN_O		<= HS_IN_I;
 VS_IN_O		<= VS_IN_I;
 ID_IN_O		<= ID_IN_I;
 
+--Pass the registers through the region
 slv_reg0out <= slv_reg0;
 slv_reg1out <= slv_reg1;
 slv_reg2out <= slv_reg2;
@@ -133,3 +150,4 @@ slv_reg6out <= slv_reg6;
 slv_reg7out <= slv_reg7;
 
 end Behavioral;
+--End Grayscale
