@@ -33,7 +33,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity Video_Box is
 port (
-    --reg in
+    -- reg in
      slv_reg0 : in std_logic_vector(31 downto 0);  
      slv_reg1 : in std_logic_vector(31 downto 0);  
      slv_reg2 : in std_logic_vector(31 downto 0);  
@@ -43,7 +43,7 @@ port (
      slv_reg6 : in std_logic_vector(31 downto 0);  
      slv_reg7 : in std_logic_vector(31 downto 0);    
      
-    --reg out
+    -- reg out
     slv_reg0out : out std_logic_vector(31 downto 0);  
     slv_reg1out : out std_logic_vector(31 downto 0);  
     slv_reg2out : out std_logic_vector(31 downto 0);  
@@ -53,9 +53,10 @@ port (
     slv_reg6out : out std_logic_vector(31 downto 0);  
     slv_reg7out : out std_logic_vector(31 downto 0);
     
-    --Bus Clock
+    -- Bus Clock
     CLK : in std_logic;
-    --Video
+	
+    -- Video Input Signals
     RGB_IN_I : in std_logic_vector(23 downto 0); -- Parallel video data (required)
     VDE_IN_I : in std_logic; -- Active video Flag (optional)
     HB_IN_I : in std_logic; -- Horizontal blanking signal (optional)
@@ -63,7 +64,8 @@ port (
     HS_IN_I : in std_logic; -- Horizontal sync signal (optional)
     VS_IN_I : in std_logic; -- Veritcal sync signal (optional)
     ID_IN_I : in std_logic; -- Field ID (optional)
-    --  additional ports here
+    
+	-- Video Output Signals
     RGB_IN_O : out std_logic_vector(23 downto 0); -- Parallel video data (required)
     VDE_IN_O : out std_logic; -- Active video Flag (optional)
     HB_IN_O : out std_logic; -- Horizontal blanking signal (optional)
@@ -72,18 +74,23 @@ port (
     VS_IN_O : out std_logic; -- Veritcal sync signal (optional)
     ID_IN_O : out std_logic; -- Field ID (optional)
     
+	--The Pixel Clock
     PIXEL_CLK_IN : in std_logic;
     
+	--Signals that give the x and y coordinates of the current pixel
     X_Cord : in std_logic_vector(15 downto 0);
     Y_Cord : in std_logic_vector(15 downto 0)
 
 );
 end Video_Box;
 
+--Begin Pass-through architecture
 architecture Behavioral of Video_Box is
-
+ --No signals needed
 
 begin
+
+	-- Just pass through all of the video signals
 	RGB_IN_O 	<= RGB_IN_I;
 	VDE_IN_O	<= VDE_IN_I;
 	HB_IN_O		<= HB_IN_I;
@@ -92,6 +99,7 @@ begin
 	VS_IN_O		<= VS_IN_I;
 	ID_IN_O		<= ID_IN_I;
 	
+	-- Pass through all of the register signals
 	slv_reg0out <= slv_reg0;
 	slv_reg1out <= slv_reg1;
 	slv_reg2out <= slv_reg2;
@@ -102,3 +110,4 @@ begin
 	slv_reg7out <= slv_reg7;
 
 end Behavioral;
+--End Pass-through architecture
