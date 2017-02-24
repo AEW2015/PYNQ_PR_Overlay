@@ -1,20 +1,21 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Company: Brigham Young University
+-- Engineer: Andrew Wilson
 -- 
 -- Create Date: 02/10/2017 11:07:04 AM
--- Design Name: 
+-- Design Name: Box Overlay Filter 2
 -- Module Name: Video_Box - Behavioral
 -- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
+-- Tool Versions: Vivado 2016.3 
+-- Description: This design is for a partial bitstream to be programmed
+-- on Brigham Young Univeristy's Video Base Design.
+-- This filter passes the video signals from input to output except at
+-- locations defined by user registers, where instead it will draw lines.
+-- This filter draws lines on the image that form a box where the line 
+-- thickness is defined by a user register.
 -- 
 -- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
+-- Revision 1.0
 -- 
 ----------------------------------------------------------------------------------
 
