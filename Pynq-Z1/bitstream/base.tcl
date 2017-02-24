@@ -3415,7 +3415,16 @@ set_property top top [current_fileset]
 update_compile_order -fileset sources_1
 puts "Start Synthesis"
 launch_runs synth_1 -jobs 2
-#open_run synth_1 -name synth_1
+wait_on_run synth_1
+
+# This hwardware definition file will be used for microblaze projects
+file mkdir ./base/base.sdk
+write_hwdef -force  -file ./base/base.sdk/base.hdf
+file copy -force ./base/base.sdk/base.hdf ../../sdk/
+
+
 puts "Write Checkpoint"
-write_checkpoint -force ../Partial_Designs/Static/top.dcp 
+# move and rename top dcp to final location
+file copy -force ./base/base.runs/synth_1/top.dcp ../Partial_Designs/Static/top.dcp 
+
 puts "Done"
