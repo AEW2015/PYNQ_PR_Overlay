@@ -33,7 +33,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity Video_Box is
 port (
-    --reg in
+
+    -- Register in
      slv_reg0 : in std_logic_vector(31 downto 0);  
      slv_reg1 : in std_logic_vector(31 downto 0);  
      slv_reg2 : in std_logic_vector(31 downto 0);  
@@ -43,7 +44,7 @@ port (
      slv_reg6 : in std_logic_vector(31 downto 0);  
      slv_reg7 : in std_logic_vector(31 downto 0);    
      
-    --reg out
+    -- Register out
     slv_reg0out : out std_logic_vector(31 downto 0);  
     slv_reg1out : out std_logic_vector(31 downto 0);  
     slv_reg2out : out std_logic_vector(31 downto 0);  
@@ -53,9 +54,10 @@ port (
     slv_reg6out : out std_logic_vector(31 downto 0);  
     slv_reg7out : out std_logic_vector(31 downto 0);
     
-    --Bus Clock
+    -- Bus Clock
     CLK : in std_logic;
-    --Video
+	
+    -- Video Input Signals
     RGB_IN_I : in std_logic_vector(23 downto 0); -- Parallel video data (required)
     VDE_IN_I : in std_logic; -- Active video Flag (optional)
     HB_IN_I : in std_logic; -- Horizontal blanking signal (optional)
@@ -63,7 +65,8 @@ port (
     HS_IN_I : in std_logic; -- Horizontal sync signal (optional)
     VS_IN_I : in std_logic; -- Veritcal sync signal (optional)
     ID_IN_I : in std_logic; -- Field ID (optional)
-    --  additional ports here
+    
+	-- Video Output Signals
     RGB_IN_O : out std_logic_vector(23 downto 0); -- Parallel video data (required)
     VDE_IN_O : out std_logic; -- Active video Flag (optional)
     HB_IN_O : out std_logic; -- Horizontal blanking signal (optional)
@@ -72,31 +75,48 @@ port (
     VS_IN_O : out std_logic; -- Veritcal sync signal (optional)
     ID_IN_O : out std_logic; -- Field ID (optional)
     
+	--Pixel Clock
     PIXEL_CLK_IN : in std_logic;
     
+	--Signals that give the x and y coordinates of the current pixel
     X_Cord : in std_logic_vector(15 downto 0);
     Y_Cord : in std_logic_vector(15 downto 0)
 
 );
 end Video_Box;
 
+--Begin RGB Control architecture
 architecture Behavioral of Video_Box is
 
-
-signal red, blue, green : std_logic_vector(7 downto 0);
+	--Create Red, Blue, Green signals that contain the actual Red,
+		--Blue, and Green signals
+	signal red, blue, green : std_logic_vector(7 downto 0);
+	--Create the register controlled Red, Green, and Blue signals
 	signal lred, lblue, lgreen : std_logic_vector(7 downto 0);
-	
 	
 begin
 
-	-- Add user logic here
+	-- Get the original Red, Green, and Blue signals
 	red <= RGB_IN_I(23 downto 16);
 	green <= RGB_IN_I(15 downto 8);
 	blue <= RGB_IN_I(7 downto 0);
+	
+	-- Set the Red value to the register0 value if it is less than the original red value
+	-- Otherwise, keep at the original red value
 	lred <= slv_reg0(7 downto 0) when slv_reg0(7 downto 0) < red else red;
+	
+	-- Set the Green value to the register0 value if it is less than the original green value
+	-- Otherwise, keep at the original green value
 	lgreen <= slv_reg1(7 downto 0) when slv_reg1(7 downto 0) < green else green;
+	
+	-- Set the Blue value to the register0 value if it is less than the original blue value
+	-- Otherwise, keep at the original blue value
 	lblue <= slv_reg2(7 downto 0) when slv_reg2(7 downto 0) < blue else blue;
+	
+	-- Concatenate the new RED, Green, Blue values and route them out
 	RGB_IN_O 	<= lred&lgreen&lblue;
+	
+	-- Route the other video signals through
 	VDE_IN_O	<= VDE_IN_I;
 	HB_IN_O		<= HB_IN_I;
 	VB_IN_O		<= VB_IN_I;
@@ -104,6 +124,7 @@ begin
 	VS_IN_O		<= VS_IN_I;
 	ID_IN_O		<= ID_IN_I;
 	
+	-- Route the registers through
 	slv_reg0out <= slv_reg0;
 	slv_reg1out <= slv_reg1;
 	slv_reg2out <= slv_reg2;
@@ -114,3 +135,4 @@ begin
 	slv_reg7out <= slv_reg7;
 
 end Behavioral;
+--End RGB Control architecture
