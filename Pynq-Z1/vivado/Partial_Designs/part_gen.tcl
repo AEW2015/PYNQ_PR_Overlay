@@ -1,3 +1,11 @@
+################################################################
+# Brigham Young University Video Filtering Base Design
+# 
+# part_gen.tcl
+# Version 1.0
+# Last Modified: February 24, 2017
+################################################################
+
 proc part_gen {str} {
 	read_vhdl Source/$str.vhd
 	synth_design -mode out_of_context -flatten_hierarchy rebuilt -top Video_Box -part xc7z020clg400-1

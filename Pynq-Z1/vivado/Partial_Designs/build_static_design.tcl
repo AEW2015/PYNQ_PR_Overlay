@@ -1,3 +1,11 @@
+################################################################
+# Brigham Young University Video Filtering Base Design
+# 
+# build_static_design.tcl
+# Version 1.0
+# Last Modified: February 24, 2017
+################################################################
+
 read_vhdl ./Source/pass_through.vhd
 synth_design -mode out_of_context -flatten_hierarchy rebuilt -top Video_Box -part xc7z020clg400-1
 write_checkpoint -force Synth/pass_through.dcp 

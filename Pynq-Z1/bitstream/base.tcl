@@ -1,3 +1,10 @@
+################################################################
+# Brigham Young University Video Filtering Base Design
+# 
+# base.tcl
+# Version 1.0
+# Last Modified: February 24, 2017
+################################################################
 
 puts "Welcome this will take a long time 30 mins to 2 hours"
 
