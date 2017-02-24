@@ -1,4 +1,6 @@
 
+puts "Welcome this will take a long time 30 mins to 2 hours"
+
 ################################################################
 # This is a generated script based on design: system
 #
@@ -34,6 +36,9 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 # START
 ################################################################
 
+puts "Setup Project Folder"
+
+
 # To test this script, run the following commands from Vivado Tcl console:
 # source system_script.tcl
 
@@ -46,6 +51,8 @@ set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
    create_project base base -part xc7z020clg400-1
 }
+
+puts "Reference IP Folder"
 set_property  ip_repo_paths  ../ip [current_project]
 update_ip_catalog
 
@@ -57,6 +64,7 @@ set design_name system
 # you can create a design using the following command:
 #    create_bd_design $design_name
 
+puts "Start Design"
 # Creating design if needed
 set errMsg ""
 set nRet 0
@@ -3386,10 +3394,11 @@ levelinfo -pg 1 -40 110 410 830 1310 1860 2480 2800 -top -80 -bot 2830
 # MAIN FLOW
 ##################################################################
 
-puts "Welcome this will take a long time 30 mins to 2 hours"
+puts "Start Root Design"
+
 create_root_design ""
 
-puts "Finished Block Design"
+puts "Finished Root Design"
 # Additional steps to get to bitstream
 # generate toplevel wrapper files
 make_wrapper -files [get_files ./base/base.srcs/sources_1/bd/system/system.bd] -top
