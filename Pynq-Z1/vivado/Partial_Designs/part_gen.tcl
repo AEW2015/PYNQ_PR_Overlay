@@ -13,11 +13,14 @@ proc part_gen {str} {
 	route_design
 
 	write_checkpoint -force Implement/$str.dcp
-
+	
+	pr_verify -initial Implement/pass_route_design.dcp -additional Implement/$str.dcp
+	
 	write_bitstream -file Bitstreams/$str.bit -force
 
 	close_project
 
 }
+
 
 

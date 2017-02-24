@@ -3386,9 +3386,10 @@ levelinfo -pg 1 -40 110 410 830 1310 1860 2480 2800 -top -80 -bot 2830
 # MAIN FLOW
 ##################################################################
 
+puts "Welcome this will take a long time 30 mins to 2 hours"
 create_root_design ""
 
-
+puts "Finished Block Design"
 # Additional steps to get to bitstream
 # generate toplevel wrapper files
 make_wrapper -files [get_files ./base/base.srcs/sources_1/bd/system/system.bd] -top
@@ -3403,8 +3404,9 @@ add_files -norecurse ./src/top.v
 update_compile_order -fileset sources_1
 set_property top top [current_fileset]
 update_compile_order -fileset sources_1
-
+puts "Start Synthesis"
 launch_runs synth_1 -jobs 2
-open_run synth_1 -name synth_1
-
+#open_run synth_1 -name synth_1
+puts "Write Checkpoint"
 write_checkpoint -force ../Partial_Designs/Static/top.dcp 
+puts "Done"
