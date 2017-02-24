@@ -1,20 +1,20 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Company: Brigham Young University
+-- Engineer: Andrew Wilson
 -- 
 -- Create Date: 01/30/2017 10:24:00 AM
--- Design Name: 
--- Module Name: Video_pr_block - Behavioral
+-- Design Name: Invert Filter
+-- Module Name: Video_Box - Behavioral
 -- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
+-- Tool Versions: Vivado 2016.3 
+-- Description: This design is for a partial bitstream to be programmed
+-- on Brigham Young Univeristy's Video Base Design.
+-- This filter inverts the image passing through the filter. This is 
+-- done by taking the make RGB value and subtracting the actual from 
+-- the max, creating the inverse of the RGB value.
 -- 
 -- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
+-- Revision 1.0
 -- 
 ----------------------------------------------------------------------------------
 
