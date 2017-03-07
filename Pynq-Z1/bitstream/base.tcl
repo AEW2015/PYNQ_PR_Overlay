@@ -3421,6 +3421,7 @@ update_compile_order -fileset sources_1
 set_property top top [current_fileset]
 update_compile_order -fileset sources_1
 puts "Start Synthesis"
+reset_run synth_1
 launch_runs synth_1 -jobs 2
 wait_on_run synth_1
 
