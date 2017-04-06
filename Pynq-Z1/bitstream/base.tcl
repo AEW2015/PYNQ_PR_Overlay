@@ -1,12 +1,3 @@
-################################################################
-# Brigham Young University Video Filtering Base Design
-# 
-# base.tcl
-# Version 1.0
-# Last Modified: February 24, 2017
-################################################################
-
-puts "Welcome this will take a long time 30 mins to 2 hours"
 
 ################################################################
 # This is a generated script based on design: system
@@ -43,16 +34,12 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 # START
 ################################################################
 
-puts "Setup Project Folder"
-
-
 # To test this script, run the following commands from Vivado Tcl console:
 # source system_script.tcl
 
 # If there is no project opened, this script will create a
 # project, but make sure you do not have an existing project
 # <./myproj/project_1.xpr> in the current working folder.
-
 
 set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
@@ -63,7 +50,6 @@ puts "Reference IP Folder"
 set_property  ip_repo_paths  ../ip [current_project]
 update_ip_catalog
 
-
 # CHANGE DESIGN NAME HERE
 set design_name system
 
@@ -71,7 +57,6 @@ set design_name system
 # you can create a design using the following command:
 #    create_bd_design $design_name
 
-puts "Start Design"
 # Creating design if needed
 set errMsg ""
 set nRet 0
@@ -876,11 +861,6 @@ proc create_hier_cell_video { parentCell nameHier } {
   # Create instance: axi_dynclk_0, and set properties
   set axi_dynclk_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:axi_dynclk:1.0 axi_dynclk_0 ]
 
-  set_property -dict [ list \
-CONFIG.NUM_READ_OUTSTANDING {1} \
-CONFIG.NUM_WRITE_OUTSTANDING {1} \
- ] [get_bd_intf_pins /video/axi_dynclk_0/s00_axi]
-
   # Create instance: axi_gpio_video, and set properties
   set axi_gpio_video [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_video ]
   set_property -dict [ list \
@@ -915,9 +895,10 @@ CONFIG.c_s2mm_max_burst_length {32} \
   # Create instance: dvi2rgb_0, and set properties
   set dvi2rgb_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:dvi2rgb:1.7 dvi2rgb_0 ]
   set_property -dict [ list \
-CONFIG.kAddBUFG {false} \
+CONFIG.kAddBUFG {true} \
 CONFIG.kClkRange {1} \
 CONFIG.kEdidFileName {720p_edid.data} \
+CONFIG.kEmulateDDC {true} \
 CONFIG.kRstActiveHigh {false} \
  ] $dvi2rgb_0
 
@@ -979,13 +960,13 @@ CONFIG.NUM_PORTS {6} \
   connect_bd_intf_net -intf_net Conn3 [get_bd_intf_pins ctrl1] [get_bd_intf_pins v_tc_1/ctrl]
   connect_bd_intf_net -intf_net Conn4 [get_bd_intf_pins S_AXI_LITE] [get_bd_intf_pins axi_vdma_0/S_AXI_LITE]
   connect_bd_intf_net -intf_net Conn5 [get_bd_intf_pins S_AXI2] [get_bd_intf_pins Video_PR_0/S_AXI]
-  connect_bd_intf_net -intf_net Video_PR_0_RGB_IN_O [get_bd_intf_pins Video_PR_0/RGB_IN_O] [get_bd_intf_pins v_vid_in_axi4s_0/vid_io_in]
+  connect_bd_intf_net -intf_net Video_PR_0_RGB_OUT [get_bd_intf_pins Video_PR_0/RGB_OUT] [get_bd_intf_pins v_vid_in_axi4s_0/vid_io_in]
   connect_bd_intf_net -intf_net axi_mem_intercon_M00_AXI [get_bd_intf_pins M00_AXI] [get_bd_intf_pins axi_mem_intercon/M00_AXI]
   connect_bd_intf_net -intf_net axi_vdma_0_M_AXIS_MM2S [get_bd_intf_pins axi_vdma_0/M_AXIS_MM2S] [get_bd_intf_pins v_axi4s_vid_out_0/video_in]
   connect_bd_intf_net -intf_net axi_vdma_0_M_AXI_MM2S [get_bd_intf_pins axi_mem_intercon/S01_AXI] [get_bd_intf_pins axi_vdma_0/M_AXI_MM2S]
   connect_bd_intf_net -intf_net axi_vdma_0_M_AXI_S2MM [get_bd_intf_pins axi_mem_intercon/S00_AXI] [get_bd_intf_pins axi_vdma_0/M_AXI_S2MM]
   connect_bd_intf_net -intf_net dvi2rgb_0_DDC [get_bd_intf_pins DDC] [get_bd_intf_pins dvi2rgb_0/DDC]
-  connect_bd_intf_net -intf_net dvi2rgb_0_RGB [get_bd_intf_pins Video_PR_0/RGB_IN_I] [get_bd_intf_pins dvi2rgb_0/RGB]
+  connect_bd_intf_net -intf_net dvi2rgb_0_RGB [get_bd_intf_pins Video_PR_0/RGB_IN] [get_bd_intf_pins dvi2rgb_0/RGB]
   connect_bd_intf_net -intf_net hdmi_in_1 [get_bd_intf_pins TMDS] [get_bd_intf_pins dvi2rgb_0/TMDS]
   connect_bd_intf_net -intf_net processing_system7_0_axi_periph_M06_AXI [get_bd_intf_pins S_AXI] [get_bd_intf_pins hdmi_out_hpd_video/S_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_axi_periph_M07_AXI [get_bd_intf_pins S_AXI1] [get_bd_intf_pins axi_gpio_video/S_AXI]
@@ -1007,7 +988,7 @@ CONFIG.NUM_PORTS {6} \
   connect_bd_net -net axi_gpio_video_ip2intc_irpt [get_bd_pins axi_gpio_video/ip2intc_irpt] [get_bd_pins xlconcat_0/In4]
   connect_bd_net -net axi_vdma_0_mm2s_introut [get_bd_pins axi_vdma_0/mm2s_introut] [get_bd_pins xlconcat_0/In1]
   connect_bd_net -net axi_vdma_0_s2mm_introut [get_bd_pins axi_vdma_0/s2mm_introut] [get_bd_pins xlconcat_0/In0]
-  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins PixelClk] [get_bd_pins Video_PR_0/PIXEL_CLK_IN] [get_bd_pins dvi2rgb_0/PixelClk] [get_bd_pins v_tc_1/clk] [get_bd_pins v_vid_in_axi4s_0/vid_io_in_clk]
+  connect_bd_net -net dvi2rgb_0_PixelClk [get_bd_pins PixelClk] [get_bd_pins Video_PR_0/PIXEL_CLK] [get_bd_pins dvi2rgb_0/PixelClk] [get_bd_pins v_tc_1/clk] [get_bd_pins v_vid_in_axi4s_0/vid_io_in_clk]
   connect_bd_net -net dvi2rgb_0_aPixelClkLckd [get_bd_pins aPixelClkLckd] [get_bd_pins axi_gpio_video/gpio2_io_i] [get_bd_pins dvi2rgb_0/aPixelClkLckd]
   connect_bd_net -net hdmi_out_hpd_video_gpio_io_o [get_bd_pins gpio_io_o] [get_bd_pins hdmi_out_hpd_video/gpio_io_o]
   connect_bd_net -net hdmi_out_hpd_video_ip2intc_irpt [get_bd_pins hdmi_out_hpd_video/ip2intc_irpt] [get_bd_pins xlconcat_0/In5]
@@ -1018,6 +999,93 @@ CONFIG.NUM_PORTS {6} \
   connect_bd_net -net v_tc_1_irq [get_bd_pins v_tc_1/irq] [get_bd_pins xlconcat_0/In3]
   connect_bd_net -net vid_io_in_reset_1 [get_bd_pins vid_io_in_reset] [get_bd_pins v_vid_in_axi4s_0/vid_io_in_reset]
   connect_bd_net -net xlconcat_0_dout [get_bd_pins dout] [get_bd_pins xlconcat_0/dout]
+
+  # Perform GUI Layout
+  regenerate_bd_layout -hierarchy [get_bd_cells /video] -layout_string {
+   guistr: "# # String gsaved with Nlview 6.6.5b  2016-09-06 bk=1.3687 VDI=39 GEI=35 GUI=JA:1.6
+#  -string -flagsOSRD
+preplace port PixelClk -pg 1 -y 380 -defaultsOSRD
+preplace port S_AXI_LITE -pg 1 -y 360 -defaultsOSRD
+preplace port ctrl -pg 1 -y 620 -defaultsOSRD
+preplace port TMDS1 -pg 1 -y 610 -defaultsOSRD
+preplace port TMDS -pg 1 -y 300 -defaultsOSRD
+preplace port ACLK -pg 1 -y 490 -defaultsOSRD
+preplace port aPixelClkLckd -pg 1 -y 400 -defaultsOSRD
+preplace port RefClk -pg 1 -y 320 -defaultsOSRD
+preplace port S_AXI -pg 1 -y 1060 -defaultsOSRD
+preplace port S00_ACLK -pg 1 -y 750 -defaultsOSRD
+preplace port s00_axi -pg 1 -y 950 -defaultsOSRD
+preplace port ctrl1 -pg 1 -y 670 -defaultsOSRD
+preplace port S_AXI1 -pg 1 -y 900 -defaultsOSRD
+preplace port DDC -pg 1 -y 340 -defaultsOSRD
+preplace port S_AXI2 -pg 1 -y 170 -defaultsOSRD
+preplace port M00_AXI -pg 1 -y 140 -defaultsOSRD
+preplace portBus s00_axi_aresetn -pg 1 -y 830 -defaultsOSRD
+preplace portBus ARESETN -pg 1 -y 110 -defaultsOSRD
+preplace portBus resetn -pg 1 -y 810 -defaultsOSRD
+preplace portBus dout -pg 1 -y 930 -defaultsOSRD
+preplace portBus gpio_io_o1 -pg 1 -y 830 -defaultsOSRD
+preplace portBus vid_io_in_reset -pg 1 -y 470 -defaultsOSRD
+preplace portBus M00_ARESETN -pg 1 -y 150 -defaultsOSRD
+preplace portBus gpio_io_o -pg 1 -y 1080 -defaultsOSRD
+preplace inst v_axi4s_vid_out_0 -pg 1 -lvl 5 -y 470 -defaultsOSRD
+preplace inst v_tc_0 -pg 1 -lvl 4 -y 700 -defaultsOSRD
+preplace inst axi_vdma_0 -pg 1 -lvl 4 -y 430 -defaultsOSRD
+preplace inst v_tc_1 -pg 1 -lvl 2 -y 750 -defaultsOSRD
+preplace inst hdmi_out_hpd_video -pg 1 -lvl 5 -y 1080 -defaultsOSRD
+preplace inst xlconcat_0 -pg 1 -lvl 6 -y 930 -defaultsOSRD
+preplace inst rgb2dvi_0 -pg 1 -lvl 6 -y 610 -defaultsOSRD
+preplace inst axi_gpio_video -pg 1 -lvl 5 -y 920 -defaultsOSRD
+preplace inst axi_dynclk_0 -pg 1 -lvl 2 -y 980 -defaultsOSRD
+preplace inst v_vid_in_axi4s_0 -pg 1 -lvl 1 -y 480 -defaultsOSRD
+preplace inst dvi2rgb_0 -pg 1 -lvl 6 -y 370 -defaultsOSRD
+preplace inst Video_PR_0 -pg 1 -lvl 3 -y 160 -defaultsOSRD
+preplace inst axi_mem_intercon -pg 1 -lvl 6 -y 140 -defaultsOSRD
+preplace netloc Conn1 1 6 1 NJ
+preplace netloc Video_PR_0_RGB_OUT 1 0 4 20 270 NJ 270 NJ 270 840
+preplace netloc Conn2 1 0 4 NJ 620 NJ 620 NJ 620 NJ
+preplace netloc v_vid_in_axi4s_0_video_out 1 1 3 NJ 440 N 440 840
+preplace netloc axi_vdma_0_s2mm_introut 1 4 2 1230J 350 1600
+preplace netloc axi_gpio_video_ip2intc_irpt 1 5 1 N
+preplace netloc axi_dynclk_0_PXL_CLK_O 1 2 4 N 960 880 960 1250 330 1610J
+preplace netloc processing_system7_0_axi_periph_M08_AXI 1 0 2 NJ 950 NJ
+preplace netloc Conn3 1 0 2 NJ 670 NJ
+preplace netloc hdmi_out_hpd_video_ip2intc_irpt 1 5 1 1650
+preplace netloc Conn4 1 0 4 NJ 360 NJ 360 NJ 360 NJ
+preplace netloc processing_system7_0_axi_periph_M07_AXI 1 0 5 NJ 900 NJ 900 NJ 900 NJ 900 NJ
+preplace netloc v_axi4s_vid_out_0_vid_io_out 1 5 1 1590
+preplace netloc axi_vdma_0_M_AXI_MM2S 1 4 2 1220 70 NJ
+preplace netloc hdmi_out_hpd_video_gpio_io_o 1 5 2 NJ 1080 NJ
+preplace netloc axi_dynclk_0_LOCKED_O 1 2 4 N 1000 NJ 1000 1280J 600 NJ
+preplace netloc Conn5 1 0 3 NJ 170 NJ 170 550J
+preplace netloc axi_vdma_0_M_AXIS_MM2S 1 4 1 N
+preplace netloc v_tc_0_irq 1 4 2 NJ 700 1560
+preplace netloc axi_mem_intercon_M00_AXI 1 6 1 NJ
+preplace netloc axi_dynclk_0_PXL_CLK_5X_O 1 2 4 N 980 NJ 980 1290J 640 NJ
+preplace netloc RefClk_1 1 0 6 0J 260 NJ 260 NJ 260 NJ 260 NJ 260 1640J
+preplace netloc hdmi_in_1 1 0 6 NJ 300 NJ 300 NJ 300 NJ 300 NJ 300 1630J
+preplace netloc v_tc_1_irq 1 2 4 560 1010 NJ 1010 NJ 1010 1640J
+preplace netloc rst_processing_system7_0_100M_peripheral_aresetn 1 0 6 30J 70 NJ 70 NJ 70 NJ 70 1210J 150 1650
+preplace netloc processing_system7_0_axi_periph_M06_AXI 1 0 5 NJ 1060 NJ 1060 NJ 1060 NJ 1060 NJ
+preplace netloc dvi2rgb_0_DDC 1 6 1 N
+preplace netloc xlconcat_0_dout 1 6 1 NJ
+preplace netloc resetn_1 1 0 2 NJ 810 NJ
+preplace netloc dvi2rgb_0_aPixelClkLckd 1 5 2 1620J 460 1910
+preplace netloc vid_io_in_reset_1 1 0 1 NJ
+preplace netloc axi_vdma_0_mm2s_introut 1 4 2 1240J 360 1580
+preplace netloc rst_processing_system7_0_100M_interconnect_aresetn 1 0 6 0J 60 NJ 60 NJ 60 NJ 60 NJ 60 1650J
+preplace netloc Net1 1 0 6 NJ 830 310 250 570 250 850 250 1260 250 1650J
+preplace netloc Net 1 0 5 NJ 750 290 1080 580 1080 870 1080 1300
+preplace netloc v_vid_in_axi4s_0_vtiming_out 1 1 1 290
+preplace netloc v_tc_0_vtiming_out 1 4 1 1270
+preplace netloc axi_vdma_0_M_AXI_S2MM 1 4 2 1200 50 NJ
+preplace netloc axi_gpio_video_gpio_io_o 1 5 2 1570J 830 NJ
+preplace netloc aclk_1 1 0 6 10 320 NJ 320 N 320 860J 210 NJ 210 1640
+preplace netloc dvi2rgb_0_RGB 1 2 5 590 290 NJ 290 NJ 290 NJ 290 1920
+preplace netloc dvi2rgb_0_PixelClk 1 0 7 30 280 300 280 560J 280 NJ 280 NJ 280 1620J 450 1920
+levelinfo -pg 1 -20 170 430 730 1040 1430 1780 1940 -top -60 -bot 1150
+",
+}
 
   # Restore current instance
   current_bd_instance $oldCurInst
@@ -3385,7 +3453,7 @@ preplace netloc video_TMDS1 1 5 2 2080J 610 NJ
 preplace netloc s00_axi_1 1 4 1 1610
 preplace netloc mdm_1_MBDEBUG_2 1 5 1 2060
 preplace netloc iop3_sw2shield_tri_out_a5_a0 1 2 5 610 2570 NJ 2570 NJ 2570 NJ 2570 2710
-levelinfo -pg 1 -40 110 410 830 1310 1860 2480 2800 -top -80 -bot 2830
+levelinfo -pg 1 -40 110 410 830 1310 1860 2480 2810 -top -80 -bot 2830
 ",
 }
 
@@ -3400,8 +3468,6 @@ levelinfo -pg 1 -40 110 410 830 1310 1860 2480 2800 -top -80 -bot 2830
 ##################################################################
 # MAIN FLOW
 ##################################################################
-
-puts "Start Root Design"
 
 create_root_design ""
 
@@ -3420,6 +3486,7 @@ add_files -norecurse ./src/top.v
 update_compile_order -fileset sources_1
 set_property top top [current_fileset]
 update_compile_order -fileset sources_1
+
 puts "Start Synthesis"
 reset_run synth_1
 launch_runs synth_1 -jobs 2
