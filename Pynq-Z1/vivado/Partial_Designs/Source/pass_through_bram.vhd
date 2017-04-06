@@ -22,7 +22,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx leaf cells in this code.
@@ -88,18 +88,17 @@ architecture Behavioral of Video_Box is
 	signal X_Coord_reg,Y_Coord_reg : std_logic_vector(15 downto 0):= (others=>'0');
 	signal VDE_IN_reg,VDE_OUT_reg,HS_IN_reg,HS_OUT_reg,VS_IN_reg,VS_OUT_reg : std_logic := '0';
 	signal USER_LOGIC : std_logic_vector(23 downto 0);
-	
+	type ram_type is array (2**(C_S_AXI_ADDR_WIDTH-ADDR_LSB)-1 downto 0)
+    of std_logic_vector (C_S_AXI_DATA_WIDTH-1 downto 0);
+    signal ram: ram_type:= (
+    others => (others =>'0'));
+
 	
 begin
 
 	--the user can edit the rgb values here
 	USER_LOGIC <= RGB_IN_reg; 
 	
-
-
-
-
-
 
 	-- Just pass through all of the video signals
 	RGB_OUT 	<= RGB_OUT_reg;
@@ -129,131 +128,23 @@ process(PIXEL_CLK) is
          end if;
     end process;
 	
-	
-	
-	
 process (S_AXI_ACLK)
 	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS downto 0); 
 begin
   if rising_edge(S_AXI_ACLK) then 
-	if S_AXI_ARESETN = '0' then
-	  slv_reg0 <= (others => '0');
-	  slv_reg1 <= (others => '0');
-	  slv_reg2 <= (others => '0');
-	  slv_reg3 <= (others => '0');
-	  slv_reg4 <= (others => '0');
-	  slv_reg5 <= (others => '0');
-	  slv_reg6 <= (others => '0');
-	  slv_reg7 <= (others => '0');
-	else
-	  loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
-	  if (slv_reg_wren = '1') then
-		case loc_addr is
-		  when b"000000000" =>
-			for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-			  if ( S_AXI_WSTRB(byte_index) = '1' ) then
-				-- Respective byte enables are asserted as per write strobes                   
-				-- slave registor 0
-				slv_reg0(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-			  end if;
-			end loop;
-		  when b"000000001" =>
-			for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-			  if ( S_AXI_WSTRB(byte_index) = '1' ) then
-				-- Respective byte enables are asserted as per write strobes                   
-				-- slave registor 1
-				slv_reg1(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-			  end if;
-			end loop;
-		  when b"000000010" =>
-			for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-			  if ( S_AXI_WSTRB(byte_index) = '1' ) then
-				-- Respective byte enables are asserted as per write strobes                   
-				-- slave registor 2
-				slv_reg2(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-			  end if;
-			end loop;
-		  when b"000000011" =>
-			for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-			  if ( S_AXI_WSTRB(byte_index) = '1' ) then
-				-- Respective byte enables are asserted as per write strobes                   
-				-- slave registor 3
-				slv_reg3(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-			  end if;
-			end loop;
-		  when b"000000100" =>
-			for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-			  if ( S_AXI_WSTRB(byte_index) = '1' ) then
-				-- Respective byte enables are asserted as per write strobes                   
-				-- slave registor 4
-				slv_reg4(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-			  end if;
-			end loop;
-		  when b"000000101" =>
-			for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-			  if ( S_AXI_WSTRB(byte_index) = '1' ) then
-				-- Respective byte enables are asserted as per write strobes                   
-				-- slave registor 5
-				slv_reg5(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-			  end if;
-			end loop;
-		  when b"000000110" =>
-			for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-			  if ( S_AXI_WSTRB(byte_index) = '1' ) then
-				-- Respective byte enables are asserted as per write strobes                   
-				-- slave registor 6
-				slv_reg6(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-			  end if;
-			end loop;
-		  when b"000000111" =>
-			for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-			  if ( S_AXI_WSTRB(byte_index) = '1' ) then
-				-- Respective byte enables are asserted as per write strobes                   
-				-- slave registor 7
-				slv_reg7(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-			  end if;
-			end loop;
-		  when others =>
-			slv_reg0 <= slv_reg0;
-			slv_reg1 <= slv_reg1;
-			slv_reg2 <= slv_reg2;
-			slv_reg3 <= slv_reg3;
-			slv_reg4 <= slv_reg4;
-			slv_reg5 <= slv_reg5;
-			slv_reg6 <= slv_reg6;
-			slv_reg7 <= slv_reg7;
-		end case;
-	  end if;
+	loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
+	if (slv_reg_wren = '1') then
+
+		-- Respective byte enables are asserted as per write strobes                   
+		-- slave registor 0
+		 ram(to_integer(unsigned(loc_addr))) <= S_AXI_WDATA;
+
 	end if;
   end if;                   
 end process; 
 	
-process (slv_reg0, slv_reg1, slv_reg2, slv_reg3, slv_reg4, slv_reg5, slv_reg6, slv_reg7, axi_araddr, S_AXI_ARESETN, slv_reg_rden)
-	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS downto 0);
-begin
-	-- Address decoding for reading registers
-	loc_addr := axi_araddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
-	case loc_addr is
-	  when b"000000000" =>
-		reg_data_out <= slv_reg0;
-	  when b"000000001" =>
-		reg_data_out <= slv_reg1;
-	  when b"000000010" =>
-		reg_data_out <= slv_reg2;
-	  when b"000000011" =>
-		reg_data_out <= slv_reg3;
-	  when b"000000100" =>
-		reg_data_out <= slv_reg4;
-	  when b"000000101" =>
-		reg_data_out <= slv_reg5;
-	  when b"000000110" =>
-		reg_data_out <= slv_reg6;
-	  when b"000000111" =>
-		reg_data_out <= slv_reg7;
-	  when others =>
-		reg_data_out  <= (others => '0');
-	end case;
-end process;
+reg_data_out  <= ram(to_integer(unsigned(axi_araddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB))));	
+	
 
 end Behavioral;
 --End Pass-through architecture
