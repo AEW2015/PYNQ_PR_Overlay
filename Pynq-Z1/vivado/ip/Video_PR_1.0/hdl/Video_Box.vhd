@@ -32,50 +32,48 @@ use IEEE.STD_LOGIC_1164.ALL;
 --use UNISIM.VComponents.all;
 
 entity Video_Box is
+	generic (
+    -- Users to add parameters here
+    
+    -- User parameters ends
+    -- Do not modify the parameters beyond this line
+    
+    -- Width of S_AXI data bus
+    C_S_AXI_DATA_WIDTH    : integer    := 32;
+    -- Width of S_AXI address bus
+    C_S_AXI_ADDR_WIDTH    : integer    := 11
+);
 port (
-    --reg in
-     slv_reg0 : in std_logic_vector(31 downto 0);  
-     slv_reg1 : in std_logic_vector(31 downto 0);  
-     slv_reg2 : in std_logic_vector(31 downto 0);  
-     slv_reg3 : in std_logic_vector(31 downto 0);  
-     slv_reg4 : in std_logic_vector(31 downto 0);
-     slv_reg5 : in std_logic_vector(31 downto 0);  
-     slv_reg6 : in std_logic_vector(31 downto 0);  
-     slv_reg7 : in std_logic_vector(31 downto 0);    
-     
-    --reg out
-    slv_reg0out : out std_logic_vector(31 downto 0);  
-    slv_reg1out : out std_logic_vector(31 downto 0);  
-    slv_reg2out : out std_logic_vector(31 downto 0);  
-    slv_reg3out : out std_logic_vector(31 downto 0);  
-    slv_reg4out : out std_logic_vector(31 downto 0);
-    slv_reg5out : out std_logic_vector(31 downto 0);  
-    slv_reg6out : out std_logic_vector(31 downto 0);  
-    slv_reg7out : out std_logic_vector(31 downto 0);
+    S_AXI_ARESETN : in std_logic;
+    slv_reg_wren : in std_logic;
+    slv_reg_rden : in std_logic;
+    S_AXI_WSTRB    : in std_logic_vector((C_S_AXI_DATA_WIDTH/8)-1 downto 0);
+    axi_awaddr    : in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
+    S_AXI_WDATA    : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+    axi_araddr    : in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
+    reg_data_out    : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
     
     --Bus Clock
-    CLK : in std_logic;
+    S_AXI_ACLK : in std_logic;
     --Video
-    RGB_IN_I : in std_logic_vector(23 downto 0); -- Parallel video data (required)
-    VDE_IN_I : in std_logic; -- Active video Flag (optional)
-    HB_IN_I : in std_logic; -- Horizontal blanking signal (optional)
-    VB_IN_I : in std_logic; -- Vertical blanking signal (optional)
-    HS_IN_I : in std_logic; -- Horizontal sync signal (optional)
-    VS_IN_I : in std_logic; -- Veritcal sync signal (optional)
-    ID_IN_I : in std_logic; -- Field ID (optional)
+    RGB_IN : in std_logic_vector(23 downto 0); -- Parallel video data (required)
+    VDE_IN : in std_logic; -- Active video Flag (optional)
+    
+    HS_IN : in std_logic; -- Horizontal sync signal (optional)
+    VS_IN : in std_logic; -- Veritcal sync signal (optional)
+    
     --  additional ports here
-    RGB_IN_O : out std_logic_vector(23 downto 0); -- Parallel video data (required)
-    VDE_IN_O : out std_logic; -- Active video Flag (optional)
-    HB_IN_O : out std_logic; -- Horizontal blanking signal (optional)
-    VB_IN_O : out std_logic; -- Vertical blanking signal (optional)
-    HS_IN_O : out std_logic; -- Horizontal sync signal (optional)
-    VS_IN_O : out std_logic; -- Veritcal sync signal (optional)
-    ID_IN_O : out std_logic; -- Field ID (optional)
+    RGB_OUT : out std_logic_vector(23 downto 0); -- Parallel video data (required)
+    VDE_OUT : out std_logic; -- Active video Flag (optional)
     
-    PIXEL_CLK_IN : in std_logic;
+    HS_OUT : out std_logic; -- Horizontal sync signal (optional)
+    VS_OUT : out std_logic; -- Veritcal sync signal (optional)
     
-    X_Cord : in std_logic_vector(15 downto 0);
-    Y_Cord : in std_logic_vector(15 downto 0)
+    
+    PIXEL_CLK : in std_logic;
+    
+    X_Coord : in std_logic_vector(15 downto 0);
+    Y_Coord : in std_logic_vector(15 downto 0)
 
 );
 end Video_Box;

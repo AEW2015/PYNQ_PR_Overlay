@@ -12,31 +12,27 @@ entity Video_PR_v1_0 is
 
 		-- Parameters of Axi Slave Bus Interface S_AXI
 		C_S_AXI_DATA_WIDTH	: integer	:= 32;
-		C_S_AXI_ADDR_WIDTH	: integer	:= 5
+		C_S_AXI_ADDR_WIDTH	: integer	:= 11
 	);
 	port (
 		-- Users to add ports here
-                 -- Users to add ports here
-          RGB_IN_I : in std_logic_vector(23 downto 0); -- Parallel video data (required)
-          VDE_IN_I : in std_logic; -- Active video Flag (optional)
-          HB_IN_I : in std_logic; -- Horizontal blanking signal (optional)
-          VB_IN_I : in std_logic; -- Vertical blanking signal (optional)
-          HS_IN_I : in std_logic; -- Horizontal sync signal (optional)
-          VS_IN_I : in std_logic; -- Veritcal sync signal (optional)
-          ID_IN_I : in std_logic; -- Field ID (optional)
-          --  additional ports here
-          RGB_IN_O : out std_logic_vector(23 downto 0); -- Parallel video data (required)
-          VDE_IN_O : out std_logic; -- Active video Flag (optional)
-          HB_IN_O : out std_logic; -- Horizontal blanking signal (optional)
-          VB_IN_O : out std_logic; -- Vertical blanking signal (optional)
-          HS_IN_O : out std_logic; -- Horizontal sync signal (optional)
-          VS_IN_O : out std_logic; -- Veritcal sync signal (optional)
-          ID_IN_O : out std_logic; -- Field ID (optional)
-          
-          PIXEL_CLK_IN : in std_logic;
+
 		-- User ports ends
 		-- Do not modify the ports beyond this line
-
+        RGB_IN : in std_logic_vector(23 downto 0); -- Parallel video data (required)
+        VDE_IN : in std_logic; -- Active video Flag (optional)
+        HS_IN : in std_logic; -- Horizontal sync signal (optional)
+        VS_IN : in std_logic; -- Veritcal sync signal (optional)
+       
+        --  additional ports here
+        RGB_OUT : out std_logic_vector(23 downto 0); -- Parallel video data (required)
+        VDE_OUT : out std_logic; -- Active video Flag (optional)
+     
+        HS_OUT : out std_logic; -- Horizontal sync signal (optional)
+        VS_OUT : out std_logic; -- Veritcal sync signal (optional)
+        
+        
+        PIXEL_CLK : in std_logic;
 
 		-- Ports of Axi Slave Bus Interface S_AXI
 		s_axi_aclk	: in std_logic;
@@ -65,22 +61,19 @@ end Video_PR_v1_0;
 
 architecture arch_imp of Video_PR_v1_0 is
         ATTRIBUTE X_INTERFACE_INFO : STRING;
-        ATTRIBUTE X_INTERFACE_INFO of RGB_IN_I: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_I DATA";
-        ATTRIBUTE X_INTERFACE_INFO of VDE_IN_I: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_I ACTIVE_VIDEO";
-        ATTRIBUTE X_INTERFACE_INFO of HB_IN_I: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_I HBLANK";
-        ATTRIBUTE X_INTERFACE_INFO of VB_IN_I: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_I VBLANK";
-        ATTRIBUTE X_INTERFACE_INFO of HS_IN_I: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_I HSYNC";
-        ATTRIBUTE X_INTERFACE_INFO of VS_IN_I: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_I VSYNC";
-        ATTRIBUTE X_INTERFACE_INFO of ID_IN_I: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_I FIELD";
-        
-        
-        ATTRIBUTE X_INTERFACE_INFO of RGB_IN_O: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_O DATA";
-        ATTRIBUTE X_INTERFACE_INFO of VDE_IN_O: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_O ACTIVE_VIDEO";
-        ATTRIBUTE X_INTERFACE_INFO of HB_IN_O: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_O HBLANK";
-        ATTRIBUTE X_INTERFACE_INFO of VB_IN_O: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_O VBLANK";
-        ATTRIBUTE X_INTERFACE_INFO of HS_IN_O: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_O HSYNC";
-        ATTRIBUTE X_INTERFACE_INFO of VS_IN_O: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_O VSYNC";
-        ATTRIBUTE X_INTERFACE_INFO of ID_IN_O: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN_O FIELD";
+ATTRIBUTE X_INTERFACE_INFO of RGB_IN: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN DATA";
+ATTRIBUTE X_INTERFACE_INFO of VDE_IN: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN ACTIVE_VIDEO";
+
+ATTRIBUTE X_INTERFACE_INFO of HS_IN: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN HSYNC";
+ATTRIBUTE X_INTERFACE_INFO of VS_IN: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_IN VSYNC";
+
+
+
+ATTRIBUTE X_INTERFACE_INFO of RGB_OUT: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_OUT DATA";
+ATTRIBUTE X_INTERFACE_INFO of VDE_OUT: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_OUT ACTIVE_VIDEO";
+
+ATTRIBUTE X_INTERFACE_INFO of HS_OUT: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_OUT HSYNC";
+ATTRIBUTE X_INTERFACE_INFO of VS_OUT: SIGNAL is "xilinx.com:interface:vid_io:1.0 RGB_OUT VSYNC";
 
 
 
@@ -88,27 +81,24 @@ architecture arch_imp of Video_PR_v1_0 is
 	component Video_PR_v1_0_S_AXI is
 		generic (
 		C_S_AXI_DATA_WIDTH	: integer	:= 32;
-		C_S_AXI_ADDR_WIDTH	: integer	:= 5
+		C_S_AXI_ADDR_WIDTH	: integer	:= 11
 		);
 		port (
-		         -- Users to add ports here
-          RGB_IN_I : in std_logic_vector(23 downto 0); -- Parallel video data (required)
-          VDE_IN_I : in std_logic; -- Active video Flag (optional)
-          HB_IN_I : in std_logic; -- Horizontal blanking signal (optional)
-          VB_IN_I : in std_logic; -- Vertical blanking signal (optional)
-          HS_IN_I : in std_logic; -- Horizontal sync signal (optional)
-          VS_IN_I : in std_logic; -- Veritcal sync signal (optional)
-          ID_IN_I : in std_logic; -- Field ID (optional)
-          --  additional ports here
-          RGB_IN_O : out std_logic_vector(23 downto 0); -- Parallel video data (required)
-          VDE_IN_O : out std_logic; -- Active video Flag (optional)
-          HB_IN_O : out std_logic; -- Horizontal blanking signal (optional)
-          VB_IN_O : out std_logic; -- Vertical blanking signal (optional)
-          HS_IN_O : out std_logic; -- Horizontal sync signal (optional)
-          VS_IN_O : out std_logic; -- Veritcal sync signal (optional)
-          ID_IN_O : out std_logic; -- Field ID (optional)
-          
-          PIXEL_CLK_IN : in std_logic;
+				         -- Users to add ports here
+        RGB_IN : in std_logic_vector(23 downto 0); -- Parallel video data (required)
+         VDE_IN : in std_logic; -- Active video Flag (optional)
+         HS_IN : in std_logic; -- Horizontal sync signal (optional)
+         VS_IN : in std_logic; -- Veritcal sync signal (optional)
+        
+         --  additional ports here
+         RGB_OUT : out std_logic_vector(23 downto 0); -- Parallel video data (required)
+         VDE_OUT : out std_logic; -- Active video Flag (optional)
+      
+         HS_OUT : out std_logic; -- Horizontal sync signal (optional)
+         VS_OUT : out std_logic; -- Veritcal sync signal (optional)
+         
+         
+         PIXEL_CLK : in std_logic;
 		S_AXI_ACLK	: in std_logic;
 		S_AXI_ARESETN	: in std_logic;
 		S_AXI_AWADDR	: in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
@@ -135,6 +125,7 @@ architecture arch_imp of Video_PR_v1_0 is
 
 begin
 
+
 -- Instantiation of Axi Bus Interface S_AXI
 Video_PR_v1_0_S_AXI_inst : Video_PR_v1_0_S_AXI
 	generic map (
@@ -143,22 +134,21 @@ Video_PR_v1_0_S_AXI_inst : Video_PR_v1_0_S_AXI
 	)
 	port map (
 		 --video signals
-         RGB_IN_I => RGB_IN_I,
-         VDE_IN_I  => VDE_IN_I,
-         HB_IN_I  => HB_IN_I,
-         VB_IN_I  => VB_IN_I,
-         HS_IN_I  => HS_IN_I,
-         VS_IN_I  => VS_IN_I,
-         ID_IN_I  => ID_IN_I,
-         --  additional ports here
-         RGB_IN_O  => RGB_IN_O,
-         VDE_IN_O  => VDE_IN_O,
-         HB_IN_O  => HB_IN_O,
-         VB_IN_O  => VB_IN_O,
-         HS_IN_O  => HS_IN_O,
-         VS_IN_O  => VS_IN_O,
-         ID_IN_O  => ID_IN_O,
-         PIXEL_CLK_IN  => PIXEL_CLK_IN,
+            RGB_IN => RGB_IN,
+            VDE_IN  => VDE_IN,
+
+            HS_IN  => HS_IN,
+            VS_IN  => VS_IN,
+
+            --  additional ports here
+            RGB_OUT  => RGB_OUT,
+            VDE_OUT  => VDE_OUT,
+
+            HS_OUT  => HS_OUT,
+            VS_OUT  => VS_OUT,
+
+            PIXEL_CLK  => PIXEL_CLK,
+            
 		S_AXI_ACLK	=> s_axi_aclk,
 		S_AXI_ARESETN	=> s_axi_aresetn,
 		S_AXI_AWADDR	=> s_axi_awaddr,

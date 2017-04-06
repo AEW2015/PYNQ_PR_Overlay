@@ -10,7 +10,7 @@ proc init_gui { IPINST } {
   ipgui::add_param $IPINST -name "kAddBUFG"
   ipgui::add_param $IPINST -name "kRstActiveHigh"
   ipgui::add_param $IPINST -name "kClkRange"
-  ipgui::add_param $IPINST -name "kEdidFileName"
+  ipgui::add_param $IPINST -name "kEdidFileName" -widget comboBox
 
 }
 

@@ -1,6 +1,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+Library UNISIM;
+use UNISIM.vcomponents.all;
 
 entity Video_PR_v1_0_S_AXI is
 	generic (
@@ -12,27 +14,25 @@ entity Video_PR_v1_0_S_AXI is
 		-- Width of S_AXI data bus
 		C_S_AXI_DATA_WIDTH	: integer	:= 32;
 		-- Width of S_AXI address bus
-		C_S_AXI_ADDR_WIDTH	: integer	:= 5
+		C_S_AXI_ADDR_WIDTH	: integer	:= 11
 	);
 	port (
 		-- Users to add ports here
-          RGB_IN_I : in std_logic_vector(23 downto 0); -- Parallel video data (required)
-          VDE_IN_I : in std_logic; -- Active video Flag (optional)
-          HB_IN_I : in std_logic; -- Horizontal blanking signal (optional)
-          VB_IN_I : in std_logic; -- Vertical blanking signal (optional)
-          HS_IN_I : in std_logic; -- Horizontal sync signal (optional)
-          VS_IN_I : in std_logic; -- Veritcal sync signal (optional)
-          ID_IN_I : in std_logic; -- Field ID (optional)
-          --  additional ports here
-          RGB_IN_O : out std_logic_vector(23 downto 0); -- Parallel video data (required)
-          VDE_IN_O : out std_logic; -- Active video Flag (optional)
-          HB_IN_O : out std_logic; -- Horizontal blanking signal (optional)
-          VB_IN_O : out std_logic; -- Vertical blanking signal (optional)
-          HS_IN_O : out std_logic; -- Horizontal sync signal (optional)
-          VS_IN_O : out std_logic; -- Veritcal sync signal (optional)
-          ID_IN_O : out std_logic; -- Field ID (optional)
-          
-          PIXEL_CLK_IN : in std_logic;
+				         -- Users to add ports here
+RGB_IN : in std_logic_vector(23 downto 0); -- Parallel video data (required)
+VDE_IN : in std_logic; -- Active video Flag (optional)
+HS_IN : in std_logic; -- Horizontal sync signal (optional)
+VS_IN : in std_logic; -- Veritcal sync signal (optional)
+
+--  additional ports here
+RGB_OUT : out std_logic_vector(23 downto 0); -- Parallel video data (required)
+VDE_OUT : out std_logic; -- Active video Flag (optional)
+
+HS_OUT : out std_logic; -- Horizontal sync signal (optional)
+VS_OUT : out std_logic; -- Veritcal sync signal (optional)
+
+
+PIXEL_CLK : in std_logic;
 		-- User ports ends
 		-- Do not modify the ports beyond this line
 
@@ -100,6 +100,7 @@ entity Video_PR_v1_0_S_AXI is
 end Video_PR_v1_0_S_AXI;
 
 architecture arch_imp of Video_PR_v1_0_S_AXI is
+
 component pixel_counter is
     port(
         clk : in std_logic;
@@ -111,53 +112,53 @@ component pixel_counter is
     );
 end component pixel_counter;
 component Video_Box is
+	generic (
+    -- Users to add parameters here
+
+    -- User parameters ends
+    -- Do not modify the parameters beyond this line
+
+    -- Width of S_AXI data bus
+    C_S_AXI_DATA_WIDTH    : integer    := 32;
+    -- Width of S_AXI address bus
+    C_S_AXI_ADDR_WIDTH    : integer    := 11
+);
 port (
-    --reg in
-    slv_reg0 : in std_logic_vector(31 downto 0);  
-    slv_reg1 : in std_logic_vector(31 downto 0);  
-    slv_reg2 : in std_logic_vector(31 downto 0);  
-    slv_reg3 : in std_logic_vector(31 downto 0);  
-    slv_reg4 : in std_logic_vector(31 downto 0);
-    slv_reg5 : in std_logic_vector(31 downto 0);  
-    slv_reg6 : in std_logic_vector(31 downto 0);  
-    slv_reg7 : in std_logic_vector(31 downto 0);    
-    
-    --reg out
-    slv_reg0out : out std_logic_vector(31 downto 0);  
-    slv_reg1out : out std_logic_vector(31 downto 0);  
-    slv_reg2out : out std_logic_vector(31 downto 0);  
-    slv_reg3out : out std_logic_vector(31 downto 0);  
-    slv_reg4out : out std_logic_vector(31 downto 0);
-    slv_reg5out : out std_logic_vector(31 downto 0);  
-    slv_reg6out : out std_logic_vector(31 downto 0);  
-    slv_reg7out : out std_logic_vector(31 downto 0);
+    S_AXI_ARESETN : in std_logic;
+    slv_reg_wren : in std_logic;
+    slv_reg_rden : in std_logic;
+    S_AXI_WSTRB	: in std_logic_vector((C_S_AXI_DATA_WIDTH/8)-1 downto 0);
+    axi_awaddr    : in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
+    S_AXI_WDATA    : in std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+    axi_araddr    : in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
+    reg_data_out    : out std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
     
     --Bus Clock
-    CLK : in std_logic;
-    --video signals
-    RGB_IN_I : in std_logic_vector(23 downto 0); -- Parallel video data (required)
-    VDE_IN_I : in std_logic; -- Active video Flag (optional)
-    HB_IN_I : in std_logic; -- Horizontal blanking signal (optional)
-    VB_IN_I : in std_logic; -- Vertical blanking signal (optional)
-    HS_IN_I : in std_logic; -- Horizontal sync signal (optional)
-    VS_IN_I : in std_logic; -- Veritcal sync signal (optional)
-    ID_IN_I : in std_logic; -- Field ID (optional)
+    S_AXI_ACLK : in std_logic;
+    --Video
+    RGB_IN : in std_logic_vector(23 downto 0); -- Parallel video data (required)
+    VDE_IN : in std_logic; -- Active video Flag (optional)
+
+    HS_IN : in std_logic; -- Horizontal sync signal (optional)
+    VS_IN : in std_logic; -- Veritcal sync signal (optional)
+
     --  additional ports here
-    RGB_IN_O : out std_logic_vector(23 downto 0); -- Parallel video data (required)
-    VDE_IN_O : out std_logic; -- Active video Flag (optional)
-    HB_IN_O : out std_logic; -- Horizontal blanking signal (optional)
-    VB_IN_O : out std_logic; -- Vertical blanking signal (optional)
-    HS_IN_O : out std_logic; -- Horizontal sync signal (optional)
-    VS_IN_O : out std_logic; -- Veritcal sync signal (optional)
-    ID_IN_O : out std_logic; -- Field ID (optional)
+    RGB_OUT : out std_logic_vector(23 downto 0); -- Parallel video data (required)
+    VDE_OUT : out std_logic; -- Active video Flag (optional)
+
+    HS_OUT : out std_logic; -- Horizontal sync signal (optional)
+    VS_OUT : out std_logic; -- Veritcal sync signal (optional)
+
     
-    PIXEL_CLK_IN : in std_logic;
-        
-    X_Cord : in std_logic_vector(15 downto 0);
-    Y_Cord : in std_logic_vector(15 downto 0)
+    PIXEL_CLK : in std_logic;
+    
+    X_Coord : in std_logic_vector(15 downto 0);
+    Y_Coord : in std_logic_vector(15 downto 0)
 
 );
 end component Video_Box;
+
+
 	-- AXI4LITE signals
 	signal axi_awaddr	: std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
 	signal axi_awready	: std_logic;
@@ -176,26 +177,98 @@ end component Video_Box;
 	-- ADDR_LSB = 2 for 32 bits (n downto 2)
 	-- ADDR_LSB = 3 for 64 bits (n downto 3)
 	constant ADDR_LSB  : integer := (C_S_AXI_DATA_WIDTH/32)+ 1;
-	constant OPT_MEM_ADDR_BITS : integer := 2;
+	--constant OPT_MEM_ADDR_BITS : integer := 2;
 	------------------------------------------------
-	---- Signals for user logic register space example
-	--------------------------------------------------
-	---- Number of Slave Registers 8
-	signal slv_reg0,slv_reg0in	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-	signal slv_reg1,slv_reg1in	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-	signal slv_reg2,slv_reg2in	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-	signal slv_reg3,slv_reg3in	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-	signal slv_reg4,slv_reg4in	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-	signal slv_reg5,slv_reg5in	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-	signal slv_reg6,slv_reg6in	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-	signal slv_reg7,slv_reg7in	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+
+
+	
+	
 	signal slv_reg_rden	: std_logic;
 	signal slv_reg_wren	: std_logic;
 	signal reg_data_out	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
 	signal byte_index	: integer;
-	signal x_cord,y_cord : std_logic_vector(15 downto 0);
+	signal x_coord,y_coord : std_logic_vector(15 downto 0);
+	signal RGB_IN_reg, RGB_OUT_reg,RGB_OUT_next: std_logic_vector(23 downto 0):= (others=>'0');
+    signal X_Coord_reg,Y_Coord_reg : std_logic_vector(15 downto 0):= (others=>'0');
+    signal VDE_IN_reg,VDE_OUT_reg,HS_IN_reg,HS_OUT_reg,VS_IN_reg,VS_OUT_reg : std_logic := '0';
+    signal VDE_OUT_next,HS_OUT_next,VS_OUT_next : std_logic ;
 
 begin
+
+
+
+Pixel_Counter_0 : Pixel_Counter
+    port map(
+            clk => PIXEL_CLK,
+            hs => HS_IN,
+            vs => VS_IN,
+            vde => VDE_IN,
+            pixel_x => x_coord,
+            pixel_y => y_coord
+    );
+Video_Box_0: Video_Box
+    generic map(
+        C_S_AXI_DATA_WIDTH	=> C_S_AXI_DATA_WIDTH,
+        C_S_AXI_ADDR_WIDTH    => C_S_AXI_ADDR_WIDTH
+    )
+    port map(
+        S_AXI_ARESETN => S_AXI_ARESETN,
+        slv_reg_wren => slv_reg_wren,
+        slv_reg_rden => slv_reg_rden,
+        S_AXI_WSTRB => S_AXI_WSTRB,
+        axi_awaddr   => axi_awaddr,
+        S_AXI_WDATA    => S_AXI_WDATA,
+        axi_araddr    => axi_araddr,
+        reg_data_out   => reg_data_out,
+        
+        --Bus Clock
+        S_AXI_ACLK => S_AXI_ACLK,
+        --Video
+        RGB_IN => RGB_IN_reg,
+        VDE_IN => VDE_IN_reg,
+        HS_IN => HS_IN_reg,
+        VS_IN => VS_IN_reg,
+    
+        --  additional ports here
+        RGB_OUT => RGB_OUT_next,
+        VDE_OUT => VDE_OUT_next,
+    
+        HS_OUT => HS_OUT_next,
+        VS_OUT =>VS_OUT_next,
+    
+        
+        PIXEL_CLK => PIXEL_CLK,
+        
+        X_Coord => X_Coord_reg,
+        Y_Coord => Y_Coord_reg
+    
+    );
+
+    process(PIXEL_CLK) is
+    begin
+        if (rising_edge (PIXEL_CLK)) then
+            -- Video Input Signals
+            RGB_IN_reg <= RGB_IN;
+            X_Coord_reg <= X_Coord;
+            Y_Coord_reg  <= Y_Coord;
+            VDE_IN_reg  <= VDE_IN;
+            HS_IN_reg  <= HS_IN;
+            VS_IN_reg  <= VS_IN;
+            -- Video Output Signals
+            RGB_OUT_reg  <= RGB_OUT_next;
+            VDE_OUT_reg  <= VDE_OUT_next;
+            HS_OUT_reg  <= HS_OUT_next;
+            VS_OUT_reg  <= VS_OUT_next;
+ 
+         end if;
+    end process;
+    
+ 	RGB_OUT 	<= RGB_OUT_reg;
+    VDE_OUT        <= VDE_OUT_reg;
+
+    HS_OUT        <= HS_OUT_reg;
+    VS_OUT        <= VS_OUT_reg;   
+
 	-- I/O Connections assignments
 
 	S_AXI_AWREADY	<= axi_awready;
@@ -281,109 +354,7 @@ begin
 	-- and the slave is ready to accept the write address and write data.
 	slv_reg_wren <= axi_wready and S_AXI_WVALID and axi_awready and S_AXI_AWVALID ;
 
-	process (S_AXI_ACLK)
-	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS downto 0); 
-	begin
-	  if rising_edge(S_AXI_ACLK) then 
-	    if S_AXI_ARESETN = '0' then
-	      slv_reg0 <= (others => '0');
-	      slv_reg1 <= (others => '0');
-	      slv_reg2 <= (others => '0');
-	      slv_reg3 <= (others => '0');
-	      slv_reg4 <= (others => '0');
-	      slv_reg5 <= (others => '0');
-	      slv_reg6 <= (others => '0');
-	      slv_reg7 <= (others => '0');
-	    else
-        slv_reg0 <= slv_reg0in;
-        slv_reg1 <= slv_reg1in;
-        slv_reg2 <= slv_reg2in;
-        slv_reg3 <= slv_reg3in;
-        slv_reg4 <= slv_reg4in;
-        slv_reg5 <= slv_reg5in;
-        slv_reg6 <= slv_reg6in;
-        slv_reg7 <= slv_reg7in;
-	      loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
-	      if (slv_reg_wren = '1') then
-	        case loc_addr is
-	          when b"000" =>
-	            for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-	              if ( S_AXI_WSTRB(byte_index) = '1' ) then
-	                -- Respective byte enables are asserted as per write strobes                   
-	                -- slave registor 0
-	                slv_reg0(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-	              end if;
-	            end loop;
-	          when b"001" =>
-	            for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-	              if ( S_AXI_WSTRB(byte_index) = '1' ) then
-	                -- Respective byte enables are asserted as per write strobes                   
-	                -- slave registor 1
-	                slv_reg1(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-	              end if;
-	            end loop;
-	          when b"010" =>
-	            for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-	              if ( S_AXI_WSTRB(byte_index) = '1' ) then
-	                -- Respective byte enables are asserted as per write strobes                   
-	                -- slave registor 2
-	                slv_reg2(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-	              end if;
-	            end loop;
-	          when b"011" =>
-	            for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-	              if ( S_AXI_WSTRB(byte_index) = '1' ) then
-	                -- Respective byte enables are asserted as per write strobes                   
-	                -- slave registor 3
-	                slv_reg3(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-	              end if;
-	            end loop;
-	          when b"100" =>
-	            for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-	              if ( S_AXI_WSTRB(byte_index) = '1' ) then
-	                -- Respective byte enables are asserted as per write strobes                   
-	                -- slave registor 4
-	                slv_reg4(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-	              end if;
-	            end loop;
-	          when b"101" =>
-	            for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-	              if ( S_AXI_WSTRB(byte_index) = '1' ) then
-	                -- Respective byte enables are asserted as per write strobes                   
-	                -- slave registor 5
-	                slv_reg5(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-	              end if;
-	            end loop;
-	          when b"110" =>
-	            for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-	              if ( S_AXI_WSTRB(byte_index) = '1' ) then
-	                -- Respective byte enables are asserted as per write strobes                   
-	                -- slave registor 6
-	                slv_reg6(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-	              end if;
-	            end loop;
-	          when b"111" =>
-	            for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-	              if ( S_AXI_WSTRB(byte_index) = '1' ) then
-	                -- Respective byte enables are asserted as per write strobes                   
-	                -- slave registor 7
-	                slv_reg7(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
-	              end if;
-	            end loop;
-	          when others =>
-	            slv_reg0 <= slv_reg0;
-	            slv_reg1 <= slv_reg1;
-	            slv_reg2 <= slv_reg2;
-	            slv_reg3 <= slv_reg3;
-	            slv_reg4 <= slv_reg4;
-	            slv_reg5 <= slv_reg5;
-	            slv_reg6 <= slv_reg6;
-	            slv_reg7 <= slv_reg7;
-	        end case;
-	      end if;
-	    end if;
-	  end if;                   
-	end process; 
+
 
 	-- Implement write response logic generation
 	-- The write response and response valid signals are asserted by the slave 
@@ -466,32 +437,7 @@ begin
 	-- and the slave is ready to accept the read address.
 	slv_reg_rden <= axi_arready and S_AXI_ARVALID and (not axi_rvalid) ;
 
-	process (slv_reg0, slv_reg1, slv_reg2, slv_reg3, slv_reg4, slv_reg5, slv_reg6, slv_reg7, axi_araddr, S_AXI_ARESETN, slv_reg_rden)
-	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS downto 0);
-	begin
-	    -- Address decoding for reading registers
-	    loc_addr := axi_araddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
-	    case loc_addr is
-	      when b"000" =>
-	        reg_data_out <= slv_reg0;
-	      when b"001" =>
-	        reg_data_out <= slv_reg1;
-	      when b"010" =>
-	        reg_data_out <= slv_reg2;
-	      when b"011" =>
-	        reg_data_out <= slv_reg3;
-	      when b"100" =>
-	        reg_data_out <= slv_reg4;
-	      when b"101" =>
-	        reg_data_out <= slv_reg5;
-	      when b"110" =>
-	        reg_data_out <= slv_reg6;
-	      when b"111" =>
-	        reg_data_out <= slv_reg7;
-	      when others =>
-	        reg_data_out  <= (others => '0');
-	    end case;
-	end process; 
+
 
 	-- Output register or memory read data
 	process( S_AXI_ACLK ) is
@@ -510,63 +456,10 @@ begin
 	    end if;
 	  end if;
 	end process;
-Pixel_Counter_0 : Pixel_Counter
-    port map(
-            clk => PIXEL_CLK_IN,
-            hs => HS_IN_I,
-            vs => VS_IN_I,
-            vde => VDE_IN_I,
-            pixel_x => x_cord,
-            pixel_y => y_cord
-    );
+
 
 	-- Add user logic here
-Video_Box_0 : Video_Box
-    port map(
-        --reg in
-     slv_reg0 =>  slv_reg0, 
-     slv_reg1  =>  slv_reg1,   
-     slv_reg2  =>  slv_reg2,   
-     slv_reg3  =>  slv_reg3,  
-     slv_reg4  =>  slv_reg4, 
-     slv_reg5  =>  slv_reg5, 
-     slv_reg6  =>  slv_reg6, 
-     slv_reg7  =>  slv_reg7,     
-     
-    --reg out
-    slv_reg0out  =>  slv_reg0in,  
-    slv_reg1out  =>  slv_reg1in,    
-    slv_reg2out  =>  slv_reg2in,    
-    slv_reg3out  =>  slv_reg3in,    
-    slv_reg4out  =>  slv_reg4in,  
-    slv_reg5out  =>  slv_reg5in,    
-    slv_reg6out  =>  slv_reg6in,    
-    slv_reg7out  =>  slv_reg7in,  
-    
-    --Bus Clock
-    CLK => S_AXI_ACLK,
-    --video signals
-    RGB_IN_I => RGB_IN_I,
-    VDE_IN_I  => VDE_IN_I,
-    HB_IN_I  => HB_IN_I,
-    VB_IN_I  => VB_IN_I,
-    HS_IN_I  => HS_IN_I,
-    VS_IN_I  => VS_IN_I,
-    ID_IN_I  => ID_IN_I,
-    --  additional ports here
-    RGB_IN_O  => RGB_IN_O,
-    VDE_IN_O  => VDE_IN_O,
-    HB_IN_O  => HB_IN_O,
-    VB_IN_O  => VB_IN_O,
-    HS_IN_O  => HS_IN_O,
-    VS_IN_O  => VS_IN_O,
-    ID_IN_O  => ID_IN_O,
-    
-    PIXEL_CLK_IN  => PIXEL_CLK_IN,
-    -- x and y cords
-    X_CORD => x_cord,
-    Y_CORD => y_cord
-    );
+
 	-- User logic ends
 
 end arch_imp;
