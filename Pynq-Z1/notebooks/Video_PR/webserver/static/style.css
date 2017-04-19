@@ -1,0 +1,231 @@
+:root {
+    --theme-box-border: #5cf0f6;
+    --theme-box-fill: #2a5763;
+    --theme-background-dark: #13242b;
+    --theme-background-light: #2b3d43;
+    --theme-bright: #21b4ba;
+    --theme-yellow: #ead44d;
+    --theme-red: #f00;
+    --theme-black: #000;
+}
+
+body {
+    font-family: 'Source Code Pro', Courier, monospace;
+    margin: 0 0 5em;
+    color: var(--theme-bright);
+    padding:0;
+    background: var(--theme-background-light);
+    line-height: 1.5em;
+}
+
+header {
+    font-family: 'Source Code Pro', Courier, monospace;
+    background: var(--theme-background-dark);
+    white-space: nowrap;
+    position: fixed;
+    width: 100%;
+    color: white;
+    height: 85px;
+}
+
+header h1 {
+    font-family: 'Source Code Pro', Courier, monospace;
+    margin: 0;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 20px;
+}
+
+main {
+    font-family: 'Source Code Pro', Courier, monospace;
+    padding-left: 20px;
+    padding-right: 20px;
+    background: var(--theme-background-light);
+    float: left;
+    width: 100%;
+}
+
+footer {
+    font-family: 'Source Code Pro', Courier, monospace;
+    font-weight: 400;
+    color: white;
+    position: fixed;
+    bottom: 0;
+    clear: left;
+    width: 100%;
+    white-space: nowrap;
+    background: var(--theme-background-dark);
+    text-align: center;
+    padding: 4px 0;
+}
+
+form {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+pre {
+    width: 95%;
+    word-wrap: break-word;
+    white-space: pre-line;
+}
+
+a {
+    width: 95%;
+    word-wrap: break-word;
+    white-space: pre-line;
+}
+
+#wrapper {
+    overflow: hidden;
+}
+
+#content {
+    margin-top: 6em;
+}
+
+a:link {
+    color: var(--theme-bright);
+    background-color: transparent;
+    text-decoration: none;
+}
+a:visited {
+    color: var(--theme-yellow);
+    background-color: transparent;
+    text-decoration: none;
+}
+a:hover {
+    color: var(--theme-yellow);
+    background-color: transparent;
+    text-decoration: underline;
+}
+a:active {
+    color: var(--theme-bright);
+    background-color: transparent;
+    text-decoration: underline;
+}
+
+input[type=text] {
+    background-color: var(--theme-background-light);
+    border: 2px solid var(--theme-box-border);
+    color: var(--theme-bright);
+    border-radius: 10px;
+    padding: 12px 20px;
+    margin: 8px 0;
+}
+
+input[type=button], input[type=submit], input[type=reset] {
+    font-family: 'Source Code Pro', Courier, monospace;
+    background-color: var(--theme-background-light);
+    border-radius: 10px;
+    color: var(--theme-bright);
+    padding: 8px 16px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 24px;
+    cursor: pointer;
+    border: 1px solid var(--theme-yellow);
+}
+
+input[type=button]:hover, input[type=submit]:hover, input[type=reset]:hover {
+    background-color: var(--theme-box-fill);
+}
+
+.content {
+    width: 95%;
+    word-wrap: break-word;
+    white-space: pre-line;
+}
+
+.boxed {
+    font-family: 'Source Code Pro', Courier, monospace;
+    background-color: var(--theme-background-light);
+    border-radius: 10px;
+    width: 20em;
+    border: 2px solid var(--theme-yellow);
+    padding: 15px;
+    text-align: center;
+    margin: 25px;
+}
+
+.description {
+    width: 95%;
+    word-wrap: break-word;
+    white-space: pre-line;
+}
+
+.challenge_name {
+}
+
+.frame {
+    width: 96%;
+    alignment: left;
+    background-color: var(--theme-background-light);
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    border-radius: 12px;
+}
+
+::-webkit-scrollbar-track:vertical {
+    background: -webkit-linear-gradient(top, var(--theme-bright), var(--theme-background-light));
+}
+
+::-webkit-scrollbar-track:horizontal {
+    background: -webkit-linear-gradient(left, var(--theme-bright), var(--theme-background-light));
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--theme-background-dark);
+    border-radius: 12px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background:var(--theme-background-dark);
+}
+
+.filter {
+    font-family: 'Source Code Pro', Courier, monospace;
+    background-color: var(--theme-background-light);
+    border-radius: 10px;
+    color: var(--theme-bright);
+    padding: 4px 8px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer:
+    border: 1px solid var(--theme-yellow);
+}
+
+.filter:hover{
+    color: var(--theme-red);
+    border: 1px solid var(--theme-red);
+}
+
+.command {
+    font-family: 'Source Code Pro', Courier, monospace;
+    background-color: var(--theme-background-light);
+    color: var(--theme-bright);
+    width: 90%;
+    height: 95%;
+    padding: 4px 8px 8px 4px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 150px;
+    cursor: pointer:
+    border: 1px solid var(--theme-yellow);
+}
+
+.command:hover{
+    color: var(--theme-red);
+    border: 1px solid var(--theme-red);
+}
