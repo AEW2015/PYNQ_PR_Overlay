@@ -895,7 +895,7 @@ CONFIG.c_s2mm_max_burst_length {32} \
   # Create instance: dvi2rgb_0, and set properties
   set dvi2rgb_0 [ create_bd_cell -type ip -vlnv digilentinc.com:ip:dvi2rgb:1.7 dvi2rgb_0 ]
   set_property -dict [ list \
-CONFIG.kAddBUFG {true} \
+CONFIG.kAddBUFG {false} \
 CONFIG.kClkRange {1} \
 CONFIG.kEdidFileName {720p_edid.data} \
 CONFIG.kEmulateDDC {true} \
